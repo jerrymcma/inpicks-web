@@ -54,7 +54,7 @@ export const useUserPicks = () => {
 
     const { error } = await supabase
       .from('user_picks')
-      .insert(newPick)
+      .insert([newPick]) // Wrapped in an array
 
     if (error) {
       console.error('Error locking pick:', error)
