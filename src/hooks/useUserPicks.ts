@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { Database } from '../types/database'
 
 export const useUserPicks = () => {
   const { user } = useAuth()
@@ -28,7 +29,7 @@ export const useUserPicks = () => {
     if (error) {
       console.error('Error loading picks:', error)
     } else if (data) {
-      setLockedPicks(new Set(data.map((pick) => pick.game_id)))
+      setLockedPicks(new Set(data.map((pick: Database['public']['Tables']['user_picks']['Row']) => pick.game_id)))
     }
     setLoading(false)
   }
@@ -47,7 +48,7 @@ export const useUserPicks = () => {
         game_id: gameId,
         sport: sport,
         prediction_text: predictionText,
-      })
+      } as Database['public']['Tables']['user_picks']['Insert'])
 
     if (error) {
       console.error('Error locking pick:', error)

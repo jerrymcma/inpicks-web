@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { UserPick, Profile } from '../types'
+import { Database } from '../types/database'
 
 export const picksService = {
   async generatePrediction(gameId: string, homeTeam: string, awayTeam: string): Promise<string> {
@@ -29,7 +30,7 @@ export const picksService = {
           game_id: gameId,
           sport,
           prediction_text: predictionText
-        })
+        } as Database['public']['Tables']['user_picks']['Insert'])
 
       if (pickError) {
         console.error('Error locking pick:', pickError)
@@ -49,7 +50,7 @@ export const picksService = {
       if (!profile.is_subscribed && profile.free_picks_remaining > 0) {
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ free_picks_remaining: profile.free_picks_remaining - 1 })
+          .update({ free_picks_remaining: profile.free_picks_remaining - 1 } as Database['public']['Tables']['profiles']['Update'])
           .eq('id', userId)
 
         if (updateError) {
