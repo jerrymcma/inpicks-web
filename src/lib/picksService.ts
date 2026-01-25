@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { UserPick } from '../types'
+import type { UserPick, Profile } from '../types'
 
 export const picksService = {
   async generatePrediction(gameId: string, homeTeam: string, awayTeam: string): Promise<string> {
@@ -41,7 +41,7 @@ export const picksService = {
         .from('profiles')
         .select('free_picks_remaining, is_subscribed')
         .eq('id', userId)
-        .single()
+        .single<Pick<Profile, 'free_picks_remaining' | 'is_subscribed'>>()
 
       if (!profile) return false
 

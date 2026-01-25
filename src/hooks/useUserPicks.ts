@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { UserPick } from '../types'
 import { useAuth } from '../context/AuthContext'
 
 export const useUserPicks = () => {
@@ -23,7 +22,7 @@ export const useUserPicks = () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('user_picks')
-      .select('*')
+      .select('game_id')
       .eq('user_id', user.id)
 
     if (error) {

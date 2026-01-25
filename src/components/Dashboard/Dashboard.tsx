@@ -50,7 +50,6 @@ export const Dashboard: React.FC = () => {
 
     const prediction = await picksService.generatePrediction(
       game.id,
-      game.sport,
       game.homeTeam,
       game.awayTeam
     )
