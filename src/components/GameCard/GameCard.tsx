@@ -12,7 +12,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, isLocked, onLockPick }
   const { user, profile } = useAuth()
   const [loading, setLoading] = useState(false)
 
-  const gameDate = new Date(game.gameTime)
+  const gameDate = new Date(game.time)
   const formattedDate = gameDate.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

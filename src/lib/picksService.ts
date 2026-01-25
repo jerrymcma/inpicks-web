@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { UserPick } from '../types'
+import type { UserPick, Profile } from '../types'
 
 export const picksService = {
   async generatePrediction(gameId: string, sport: string, homeTeam: string, awayTeam: string): Promise<string> {
@@ -41,7 +41,7 @@ export const picksService = {
         .from('profiles')
         .select('free_picks_remaining, is_subscribed')
         .eq('id', userId)
-        .single()
+        .single<Profile>()
 
       if (!profile) return false
 
@@ -74,13 +74,13 @@ export const picksService = {
 
       if (error) throw error
 
-      return data.map(pick => ({
+      return data.map((pick: any) => ({
         id: pick.id,
-        userId: pick.user_id,
-        gameId: pick.game_id,
+        user_id: pick.user_id,
+        game_id: pick.game_id,
         sport: pick.sport,
-        predictionText: pick.prediction_text,
-        createdAt: pick.created_at
+        prediction_text: pick.prediction_text,
+        created_at: pick.created_at
       }))
     } catch (error) {
       console.error('Error fetching picks:', error)

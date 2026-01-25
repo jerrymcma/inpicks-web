@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import type { UserProfile } from '../types'
+import type { Profile } from '../types'
 
 export const useProfile = () => {
   const { user } = useAuth()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchProfile = async () => {
@@ -16,6 +16,7 @@ export const useProfile = () => {
     }
 
     try {
+      setLoading(true)
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -27,12 +28,13 @@ export const useProfile = () => {
       setProfile({
         id: data.id,
         email: data.email,
-        freePicksRemaining: data.free_picks_remaining,
-        isSubscribed: data.is_subscribed,
-        nextRefillAt: data.next_refill_at,
+        free_picks_remaining: data.free_picks_remaining,
+        is_subscribed: data.is_subscribed,
+        next_refill_at: data.next_refill_at,
       })
     } catch (error) {
       console.error('Error fetching profile:', error)
+      setProfile(null)
     } finally {
       setLoading(false)
     }

@@ -1,4 +1,4 @@
-import type { Game } from '../types'
+import type { Game, Sport } from '../types'
 
 export const nflGames: Game[] = [
   {
@@ -6,21 +6,30 @@ export const nflGames: Game[] = [
     homeTeam: 'Kansas City Chiefs',
     awayTeam: 'Buffalo Bills',
     time: 'Sun, 6:30 PM',
-    sport: 'NFL'
+    sport: 'NFL',
+    odds: 'KC -3.5',
+    confidence: 87,
+    aiPrediction: 'Chiefs win by 3-7 points'
   },
   {
     id: 'nfl_49ers_packers',
     homeTeam: 'Green Bay Packers',
     awayTeam: 'San Francisco 49ers',
     time: 'Sun, 8:20 PM',
-    sport: 'NFL'
+    sport: 'NFL',
+    odds: 'SF -6.5',
+    confidence: 92,
+    aiPrediction: '49ers win by 10+ points'
   },
   {
     id: 'nfl_ravens_bengals',
     homeTeam: 'Cincinnati Bengals',
     awayTeam: 'Baltimore Ravens',
     time: 'Mon, 8:15 PM',
-    sport: 'NFL'
+    sport: 'NFL',
+    odds: 'BAL -3',
+    confidence: 85,
+    aiPrediction: 'Ravens cover the spread'
   }
 ]
 
@@ -30,24 +39,35 @@ export const nbaGames: Game[] = [
     homeTeam: 'Boston Celtics',
     awayTeam: 'Los Angeles Lakers',
     time: 'Thu, 7:30 PM',
-    sport: 'NBA'
+    sport: 'NBA',
+    odds: 'BOS -4.5',
+    confidence: 78,
+    aiPrediction: 'Celtics win, over 225.5 total'
   },
   {
     id: 'nba_warriors_nets',
     homeTeam: 'Brooklyn Nets',
     awayTeam: 'Golden State Warriors',
     time: 'Thu, 7:30 PM',
-    sport: 'NBA'
+    sport: 'NBA',
+    odds: 'GSW -2.5',
+    confidence: 75,
+    aiPrediction: 'Warriors win'
   },
   {
     id: 'nba_heat_bucks',
     homeTeam: 'Milwaukee Bucks',
     awayTeam: 'Miami Heat',
     time: 'Fri, 8:00 PM',
-    sport: 'NBA'
+    sport: 'NBA',
+    odds: 'MIL -5',
+    confidence: 81,
+    aiPrediction: 'Bucks win and cover'
   }
 ]
 
-export const getGamesBySport = (sport: string): Game[] => {
-  return sport === 'NFL' ? nflGames : nbaGames
+export const getGamesBySport = (sport: Sport): Game[] => {
+  if (sport === 'NFL') return nflGames
+  if (sport === 'NBA') return nbaGames
+  return []
 }
