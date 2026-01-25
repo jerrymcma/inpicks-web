@@ -24,7 +24,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, o
     const profileUpdate: ProfileUpdate = { is_subscribed: true }
     const { error } = await supabase
       .from('profiles')
-      .update([profileUpdate]) // Wrapped in an array
+      .update(profileUpdate) // Removed array wrapping
       .eq('id', user.id)
 
     if (!error) {

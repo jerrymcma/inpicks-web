@@ -34,7 +34,7 @@ export const picksService = {
       // Insert pick into database
       const { error: pickError } = await supabase
         .from('user_picks')
-        .insert([newPick]) // Wrapped in an array
+        .insert([newPick]) // Keep array wrapping for insert
 
       if (pickError) {
         console.error('Error locking pick:', pickError)
@@ -55,7 +55,7 @@ export const picksService = {
         const profileUpdate: ProfileUpdate = { free_picks_remaining: profile.free_picks_remaining - 1 }
         const { error: updateError } = await supabase
           .from('profiles')
-          .update([profileUpdate]) // Wrapped in an array
+          .update(profileUpdate) // Removed array wrapping
           .eq('id', userId)
 
         if (updateError) {
