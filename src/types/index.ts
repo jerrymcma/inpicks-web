@@ -1,26 +1,34 @@
+export type Sport = 'NFL' | 'NBA' | 'MLB' | 'NHL' | 'NCAAF' | 'NCAAB'
+
 export interface Game {
   id: string
   homeTeam: string
   awayTeam: string
   time: string
-  sport: string
+  sport: Sport
+  odds: string
+  confidence: number
+  aiPrediction: string
 }
 
-export interface UserProfile {
+export interface Profile {
   id: string
   email: string | null
-  freePicksRemaining: number
-  isSubscribed: boolean
-  nextRefillAt: string | null
+  free_picks_remaining: number
+  is_subscribed: boolean
+  next_refill_at: string | null
 }
 
 export interface UserPick {
   id: string
-  userId: string
-  gameId: string
+  user_id: string
+  game_id: string
   sport: string
-  predictionText: string
-  createdAt: string
+  prediction_text: string
+  created_at: string
 }
 
-export type Sport = 'NFL' | 'NBA'
+export interface FilterState {
+  sport: Sport | 'ALL'
+  searchQuery: string
+}
