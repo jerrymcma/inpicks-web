@@ -25,6 +25,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, o
 
     if (!error) {
       onSuccess()
+    } else {
+      console.error('Error subscribing:', error)
     }
 
     setLoading(false)

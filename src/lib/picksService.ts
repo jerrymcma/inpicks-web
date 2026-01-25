@@ -72,9 +72,11 @@ export const picksService = {
         .select('*')
         .eq('user_id', userId)
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
-      return data
+      return data || []
     } catch (error) {
       console.error('Error fetching picks:', error)
       return []

@@ -22,7 +22,7 @@ export const useUserPicks = () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('user_picks')
-      .select('game_id')
+      .select('*')
       .eq('user_id', user.id)
 
     if (error) {
