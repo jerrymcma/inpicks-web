@@ -23,10 +23,10 @@ export const Header: React.FC = () => {
                 <div className="text-sm text-slate-300">{profile?.email}</div>
                 {profile && (
                   <div className="text-xs text-slate-400">
-                    {profile.isSubscribed ? (
+                    {profile.is_subscribed ? (
                       <span className="text-green-400">Unlimited Picks ∞</span>
                     ) : (
-                      `${profile.freePicksRemaining} free picks remaining`
+                      `${profile.free_picks_remaining} free picks remaining`
                     )}
                   </div>
                 )}
