@@ -1,8 +1,8 @@
 import { supabase } from './supabase'
-import type { UserPick, Profile } from '../types'
+import type { UserPick } from '../types'
 
 export const picksService = {
-  async generatePrediction(gameId: string, sport: string, homeTeam: string, awayTeam: string): Promise<string> {
+  async generatePrediction(gameId: string, homeTeam: string, awayTeam: string): Promise<string> {
     // Simulate AI prediction generation with delay
     await new Promise(resolve => setTimeout(resolve, 2000))
 
@@ -41,7 +41,7 @@ export const picksService = {
         .from('profiles')
         .select('free_picks_remaining, is_subscribed')
         .eq('id', userId)
-        .single<Profile>()
+        .single()
 
       if (!profile) return false
 
@@ -74,14 +74,7 @@ export const picksService = {
 
       if (error) throw error
 
-      return data.map((pick: any) => ({
-        id: pick.id,
-        user_id: pick.user_id,
-        game_id: pick.game_id,
-        sport: pick.sport,
-        prediction_text: pick.prediction_text,
-        created_at: pick.created_at
-      }))
+      return data
     } catch (error) {
       console.error('Error fetching picks:', error)
       return []

@@ -29,7 +29,7 @@ export const useUserPicks = () => {
     if (error) {
       console.error('Error loading picks:', error)
     } else if (data) {
-      setLockedPicks(new Set(data.map((pick: UserPick) => pick.game_id)))
+      setLockedPicks(new Set(data.map((pick) => pick.game_id)))
     }
     setLoading(false)
   }
