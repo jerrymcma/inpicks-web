@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import { Database } from '../../types/database'
 
 interface SubscriptionModalProps {
   onClose: () => void
@@ -21,7 +20,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, o
     // In production, integrate with Stripe or your payment processor
     const { error } = await supabase
       .from('profiles')
-      .update([{ is_subscribed: true } as Database['public']['Tables']['profiles']['Update']])
+      .update({ is_subscribed: true })
       .eq('id', user.id)
 
     if (!error) {
