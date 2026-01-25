@@ -43,12 +43,12 @@ export const useUserPicks = () => {
 
     const { error } = await supabase
       .from('user_picks')
-      .insert({
+      .insert([{ // Wrap the object in an array
         user_id: user.id,
         game_id: gameId,
         sport: sport,
         prediction_text: predictionText,
-      } as Database['public']['Tables']['user_picks']['Insert'])
+      } as Database['public']['Tables']['user_picks']['Insert']])
 
     if (error) {
       console.error('Error locking pick:', error)

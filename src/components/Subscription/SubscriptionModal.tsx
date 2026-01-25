@@ -21,7 +21,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, o
     // In production, integrate with Stripe or your payment processor
     const { error } = await supabase
       .from('profiles')
-      .update({ is_subscribed: true } as Database['public']['Tables']['profiles']['Update'])
+      .update([{ is_subscribed: true } as Database['public']['Tables']['profiles']['Update']])
       .eq('id', user.id)
 
     if (!error) {

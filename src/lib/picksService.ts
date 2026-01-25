@@ -11,7 +11,6 @@ export const picksService = {
     const predictions: Record<string, string> = {
       'nfl_chiefs_bills': 'Chiefs to win by 3-7 points. Their offense has been explosive, averaging 28 points per game.',
       'nfl_49ers_packers': 'Packers slight edge at home. Look for a close game decided in the 4th quarter.',
-      'nfl_ravens_bengals': 'Ravens defense dominates. Take the under on total points.',
       'nba_lakers_celtics': 'Celtics win convincingly at home. Their defense will limit Lakers to under 105 points.',
       'nba_warriors_nets': 'Warriors by 5+. Curry expected to have a big game in Brooklyn.',
       'nba_heat_bucks': 'Bucks cover the spread. Giannis matchup advantage against Heat frontcourt.'
@@ -25,12 +24,12 @@ export const picksService = {
       // Insert pick into database
       const { error: pickError } = await supabase
         .from('user_picks')
-        .insert({
+        .insert([{ // Wrap the object in an array
           user_id: userId,
           game_id: gameId,
           sport,
           prediction_text: predictionText
-        } as Database['public']['Tables']['user_picks']['Insert'])
+        } as Database['public']['Tables']['user_picks']['Insert']])
 
       if (pickError) {
         console.error('Error locking pick:', pickError)
@@ -50,7 +49,7 @@ export const picksService = {
       if (!profile.is_subscribed && profile.free_picks_remaining > 0) {
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ free_picks_remaining: profile.free_picks_remaining - 1 } as Database['public']['Tables']['profiles']['Update'])
+          .update([{ free_picks_remaining: profile.free_picks_remaining - 1 } as Database['public']['Tables']['profiles']['Update']]) // Wrap the object in an array
           .eq('id', userId)
 
         if (updateError) {
