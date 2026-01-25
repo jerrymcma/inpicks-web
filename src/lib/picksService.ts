@@ -1,5 +1,10 @@
 import { supabase } from './supabase'
-import type { UserPick, Profile } from '../types'
+import type { Database } from '../types/database'
+
+type UserPickInsert = Database['public']['Tables']['user_picks']['Insert']
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
+type ProfileRow = Database['public']['Tables']['profiles']['Row']
+type UserPickRow = Database['public']['Tables']['user_picks']['Row']
 
 export const picksService = {
   async generatePrediction(gameId: string, homeTeam: string, awayTeam: string): Promise<string> {
@@ -20,15 +25,16 @@ export const picksService = {
 
   async lockInPick(userId: string, gameId: string, sport: string, predictionText: string): Promise<boolean> {
     try {
+      const newPick: UserPickInsert = {
+        user_id: userId,
+        game_id: gameId,
+        sport,
+        prediction_text: predictionText
+      }
       // Insert pick into database
       const { error: pickError } = await supabase
         .from('user_picks')
-        .insert({
-          user_id: userId,
-          game_id: gameId,
-          sport,
-          prediction_text: predictionText
-        })
+        .insert(newPick)
 
       if (pickError) {
         console.error('Error locking pick:', pickError)
@@ -40,15 +46,16 @@ export const picksService = {
         .from('profiles')
         .select('free_picks_remaining, is_subscribed')
         .eq('id', userId)
-        .single<Pick<Profile, 'free_picks_remaining' | 'is_subscribed'>>()
+        .single<Pick<ProfileRow, 'free_picks_remaining' | 'is_subscribed'>>()
 
       if (!profile) return false
 
       // Only decrement if not subscribed and has picks remaining
       if (!profile.is_subscribed && profile.free_picks_remaining > 0) {
+        const profileUpdate: ProfileUpdate = { free_picks_remaining: profile.free_picks_remaining - 1 }
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ free_picks_remaining: profile.free_picks_remaining - 1 })
+          .update(profileUpdate)
           .eq('id', userId)
 
         if (updateError) {
@@ -64,7 +71,7 @@ export const picksService = {
     }
   },
 
-  async getUserPicks(userId: string): Promise<UserPick[]> {
+  async getUserPicks(userId: string): Promise<UserPickRow[]> {
     try {
       const { data, error } = await supabase
         .from('user_picks')
