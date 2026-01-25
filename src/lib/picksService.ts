@@ -46,7 +46,7 @@ export const picksService = {
         .from('profiles')
         .select('free_picks_remaining, is_subscribed')
         .eq('id', userId)
-        .single<Pick<ProfileRow, 'free_picks_remaining' | 'is_subscribed'>>()
+        .single<Pick<ProfileRow, 'free_picks_remaining' | 'is_subscribed'>>() // Explicitly cast the return type here
 
       if (!profile) return false
 
@@ -77,6 +77,7 @@ export const picksService = {
         .from('user_picks')
         .select('*')
         .eq('user_id', userId)
+        .returns<UserPickRow[]>() // Explicitly cast the return type here
 
       if (error) {
         throw error

@@ -28,11 +28,12 @@ export const useUserPicks = () => {
       .from('user_picks')
       .select('*')
       .eq('user_id', user.id)
+      .returns<UserPickRow[]>() // Explicitly cast the return type here
 
     if (error) {
       console.error('Error loading picks:', error)
     } else if (data) {
-      setLockedPicks(new Set(data.map((pick: UserPickRow) => pick.game_id)))
+      setLockedPicks(new Set(data.map(pick => pick.game_id)))
     }
     setLoading(false)
   }
