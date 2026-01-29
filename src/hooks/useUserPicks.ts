@@ -28,7 +28,7 @@ export const useUserPicks = () => {
       .from('user_picks')
       .select('*')
       .eq('user_id', user.id)
-      .returns<UserPickRow[]>() // Explicitly cast the return type here
+
 
     if (error) {
       console.error('Error loading picks:', error)
@@ -54,7 +54,7 @@ export const useUserPicks = () => {
 
     const { error } = await supabase
       .from('user_picks')
-      .insert([newPick]) // Wrapped in an array
+      .insert(newPick)
 
     if (error) {
       console.error('Error locking pick:', error)

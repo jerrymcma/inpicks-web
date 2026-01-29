@@ -34,7 +34,7 @@ export const picksService = {
       // Insert pick into database
       const { error: pickError } = await supabase
         .from('user_picks')
-        .insert([newPick]) // Keep array wrapping for insert
+        .insert(newPick)
 
       if (pickError) {
         console.error('Error locking pick:', pickError)
@@ -46,7 +46,7 @@ export const picksService = {
         .from('profiles')
         .select('free_picks_remaining, is_subscribed')
         .eq('id', userId)
-        .single<Pick<ProfileRow, 'free_picks_remaining' | 'is_subscribed'>>() // Explicitly cast the return type here
+        .single()
 
       if (!profile) return false
 
@@ -55,7 +55,7 @@ export const picksService = {
         const profileUpdate: ProfileUpdate = { free_picks_remaining: profile.free_picks_remaining - 1 }
         const { error: updateError } = await supabase
           .from('profiles')
-          .update(profileUpdate) // Removed array wrapping
+          .update(profileUpdate)
           .eq('id', userId)
 
         if (updateError) {
@@ -77,13 +77,13 @@ export const picksService = {
         .from('user_picks')
         .select('*')
         .eq('user_id', userId)
-        .returns<UserPickRow[]>() // Explicitly cast the return type here
+
 
       if (error) {
         throw error
       }
 
-      return data || []
+      return (data as UserPickRow[]) || []
     } catch (error) {
       console.error('Error fetching picks:', error)
       return []
