@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { Database } from '../types/database'
 
 type UserPickInsert = Database['public']['Tables']['user_picks']['Insert']
-type UserPickRow = Database['public']['Tables']['user_picks']['Row']
 
 export const useUserPicks = () => {
   const { user } = useAuth()

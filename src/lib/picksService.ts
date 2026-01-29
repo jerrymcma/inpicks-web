@@ -3,7 +3,6 @@ import type { Database } from '../types/database'
 
 type UserPickInsert = Database['public']['Tables']['user_picks']['Insert']
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
-type ProfileRow = Database['public']['Tables']['profiles']['Row']
 type UserPickRow = Database['public']['Tables']['user_picks']['Row']
 
 export const picksService = {

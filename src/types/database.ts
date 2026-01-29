@@ -37,6 +37,7 @@ export type Database = {
           next_refill_at?: string | null
           updated_at?: string
         }
+        Relationships: []
       }
       user_picks: {
         Row: {
@@ -87,7 +88,12 @@ export type Database = {
           game_status?: string
           created_at?: string
         }
+        Relationships: []
       }
     }
+    Views: {}
+    Functions: {}
+    Enums: {}
+    CompositeTypes: {}
   }
 }
