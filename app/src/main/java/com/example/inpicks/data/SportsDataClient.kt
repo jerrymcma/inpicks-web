@@ -33,7 +33,8 @@ object SportsDataClient {
         }
 
         return try {
-            client.get("$BASE_URL/$sportKey/odds/?apiKey=$API_KEY&regions=us&markets=h2h").body()
+            // Fetch multiple markets: h2h (moneyline), spreads, totals
+            client.get("$BASE_URL/$sportKey/odds/?apiKey=$API_KEY&regions=us&markets=h2h,spreads,totals").body()
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
@@ -49,7 +50,33 @@ data class SportsGame(
     @SerialName("home_team") val homeTeam: String,
     @SerialName("away_team") val awayTeam: String,
     val bookmakers: List<Bookmaker> = emptyList()
-)
+) {
+    // Helper functions to extract betting lines
+    fun getSpreadLine(): Pair<Double, Double>? {
+        val spreadMarket = bookmakers.firstOrNull()?.markets?.find { it.key == "spreads" }
+        val homeOutcome = spreadMarket?.outcomes?.find { it.name == homeTeam }
+        val awayOutcome = spreadMarket?.outcomes?.find { it.name == awayTeam }
+        
+        return if (homeOutcome?.point != null && awayOutcome?.point != null) {
+            Pair(homeOutcome.point, awayOutcome.point)
+        } else null
+    }
+    
+    fun getOverUnderLine(): Double? {
+        val totalsMarket = bookmakers.firstOrNull()?.markets?.find { it.key == "totals" }
+        return totalsMarket?.outcomes?.firstOrNull()?.point
+    }
+    
+    fun getMoneylineOdds(): Pair<Int, Int>? {
+        val h2hMarket = bookmakers.firstOrNull()?.markets?.find { it.key == "h2h" }
+        val homeOutcome = h2hMarket?.outcomes?.find { it.name == homeTeam }
+        val awayOutcome = h2hMarket?.outcomes?.find { it.name == awayTeam }
+        
+        return if (homeOutcome?.price != null && awayOutcome?.price != null) {
+            Pair(homeOutcome.price.toInt(), awayOutcome.price.toInt())
+        } else null
+    }
+}
 
 @Serializable
 data class Bookmaker(
@@ -67,5 +94,6 @@ data class Market(
 @Serializable
 data class Outcome(
     val name: String,
-    val price: Double
+    val price: Double,
+    val point: Double? = null // For spreads and totals
 )

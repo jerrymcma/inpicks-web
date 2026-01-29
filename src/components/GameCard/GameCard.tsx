@@ -56,33 +56,33 @@ export const GameCard: React.FC<GameCardProps> = ({ game, isLocked, onLockPick }
   }
 
   return (
-    <div className="card hover:border-slate-600 transition-all duration-200">
+    <div className="card hover:border-primary/30 transition-all duration-200">
       <div className="flex justify-between items-start mb-4">
         <span className={`${getSportColor(game.sport)} text-white text-xs font-bold px-3 py-1 rounded-full`}>
           {game.sport}
         </span>
         <div className="text-right">
-          <div className="text-slate-400 text-sm">{formattedDate}</div>
-          <div className="text-slate-300 text-sm font-medium">{formattedTime}</div>
+          <div className="text-secondary text-sm">{formattedDate}</div>
+          <div className="text-white text-sm font-medium">{formattedTime}</div>
         </div>
       </div>
 
       <div className="space-y-3 mb-4">
         <div className="flex items-center justify-between">
           <span className="text-white font-semibold">{game.awayTeam}</span>
-          <span className="text-slate-400 text-sm">@</span>
+          <span className="text-secondary text-sm">@</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-white font-semibold">{game.homeTeam}</span>
           {game.odds && (
-            <span className="text-slate-400 text-sm font-mono">{game.odds}</span>
+            <span className="text-secondary text-sm font-mono">{game.odds}</span>
           )}
         </div>
       </div>
 
-      <div className="bg-slate-900/50 rounded-lg p-4 mb-4 border border-slate-700">
+      <div className="bg-slate-900/30 rounded-lg p-4 mb-4 border border-slate-600/30">
         <div className="flex items-start justify-between mb-2">
-          <span className="text-primary-400 text-xs font-semibold uppercase tracking-wide">
+          <span className="text-primary text-xs font-semibold uppercase tracking-wide">
             AI Prediction
           </span>
           <span className={`text-sm font-bold ${getConfidenceColor(game.confidence)}`}>
@@ -97,10 +97,10 @@ export const GameCard: React.FC<GameCardProps> = ({ game, isLocked, onLockPick }
         disabled={!canLockPick || isLocked || loading}
         className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
           isLocked
-            ? 'bg-green-600 text-white cursor-default'
+            ? 'bg-primary text-white cursor-default'
             : canLockPick
             ? 'btn-primary'
-            : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+            : 'btn-secondary opacity-50 cursor-not-allowed'
         }`}
       >
         {loading ? (

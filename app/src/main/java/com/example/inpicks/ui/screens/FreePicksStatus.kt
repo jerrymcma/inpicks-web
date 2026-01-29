@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 
 @Composable
 fun FreePicksStatus(
@@ -59,20 +61,21 @@ fun FreePicksStatus(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(vertical = 8.dp, horizontal = 12.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!isLoggedIn) {
-                Text(
-                    text = "Sign in to use 3 free picks",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = onContainer
-                )
                 Button(onClick = onSignIn) {
                     Text("Sign In")
                 }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "to use 3 free picks",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = onContainer
+                )
             } else {
                 val clamped = freePicksRemaining.coerceIn(0, 3)
                 val countdownSuffix = nextRefillAtMillis?.let { target ->
@@ -81,7 +84,7 @@ fun FreePicksStatus(
                 } ?: ""
                 Text(
                     text = "Free picks left: $clamped$countdownSuffix",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = onContainer
                 )

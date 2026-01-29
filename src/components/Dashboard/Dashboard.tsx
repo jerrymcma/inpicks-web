@@ -110,70 +110,42 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Performance Header */}
-      <div className="bg-purple-900/30 border border-purple-700 rounded-lg p-6 mb-8 text-center">
-        <h2 className="text-lg text-purple-200 mb-2">InPicks AI Performance</h2>
-        <div className="text-5xl font-bold text-white mb-1">82%</div>
-        <div className="text-sm text-purple-300">Win Rate - Last 30 Days</div>
-      </div>
-
-      {/* Sport Selector */}
-      <div className="flex gap-3 mb-6">
-        {(['NFL', 'NBA'] as Sport[]).map(sport => (
-          <button
-            key={sport}
-            onClick={() => setSelectedSport(sport)}
-            className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-all ${
-              selectedSport === sport
-                ? 'bg-purple-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            {sport}
-          </button>
-        ))}
+      <div className="performance-card">
+        <div className="text-sm text-secondary font-semibold mb-2 uppercase tracking-wide">
+          InPicks AI Performance
+        </div>
+        <div className="text-4xl font-bold text-white mb-1">82%</div>
+        <div className="text-sm text-secondary/80">Win Rate</div>
       </div>
 
       {/* Free Picks Status */}
-      {user && profile && (
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mb-6">
+      {user && profile && !profile.is_subscribed && (
+        <div className="card-secondary">
           <div className="flex items-center justify-between">
-            <div>
-              {profile.is_subscribed ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-green-400 text-lg font-semibold">Unlimited Picks</span>
-                  <span className="text-2xl">∞</span>
-                </div>
-              ) : (
-                <div>
-                  <div className="text-slate-300">
-                    <span className="text-xl font-bold text-white">{profile.free_picks_remaining}</span> of 3 free picks remaining
-                  </div>
-                </div>
-              )}
+            <div className="text-white font-medium">
+              Free picks left: <span className="font-bold">{profile.free_picks_remaining}</span>
             </div>
-            {!profile.is_subscribed && (
-              <button
-                onClick={() => setShowSubscriptionModal(true)}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-lg font-semibold transition-all"
-              >
-                Go Unlimited
-              </button>
-            )}
+            <button
+              onClick={() => setShowSubscriptionModal(true)}
+              className="btn-primary"
+            >
+              Go Unlimited
+            </button>
           </div>
         </div>
       )}
 
       {!user && (
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mb-6">
+        <div className="card-secondary">
           <div className="flex items-center justify-between">
-            <div className="text-slate-300">
-              Sign in to unlock your 3 free AI picks
+            <div className="text-white">
+              Sign in to use 3 free picks
             </div>
             <button
               onClick={() => setShowAuthModal(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all"
+              className="btn-primary"
             >
               Sign In
             </button>
@@ -181,55 +153,72 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Sport Selector */}
+      <div className="flex gap-2">
+        {(['NFL', 'NBA'] as Sport[]).map(sport => (
+          <button
+            key={sport}
+            onClick={() => setSelectedSport(sport)}
+            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+              selectedSport === sport
+                ? 'btn-primary'
+                : 'btn-secondary hover:bg-slate-700'
+            }`}
+          >
+            {sport}
+          </button>
+        ))}
+      </div>
+
       {/* Games List */}
-      <h3 className="text-2xl font-bold text-white mb-4">Upcoming {selectedSport} Games</h3>
-      <div className="space-y-4">
-        {games.map(game => {
-          const userPick = getPickForGame(game.id)
-          const isLockedIn = !!userPick
-          const canViewPick = user && profile && (profile.is_subscribed || profile.free_picks_remaining > 0)
+      <div>
+        <h3 className="text-xl font-bold text-white mb-4">Upcoming {selectedSport} Games</h3>
+        <div className="space-y-3">
+          {games.map(game => {
+            const userPick = getPickForGame(game.id)
+            const isLockedIn = !!userPick
+            const canViewPick = user && profile && (profile.is_subscribed || profile.free_picks_remaining > 0)
 
-          return (
-            <div key={game.id} className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-              <div className="mb-4">
-                <h4 className="text-xl font-bold text-white mb-2">
-                  {game.awayTeam} @ {game.homeTeam}
-                </h4>
-                <p className="text-slate-400">{game.time}</p>
-              </div>
+            return (
+              <div key={game.id} className="card">
+                <div className="mb-4">
+                  <h4 className="text-lg font-bold text-white mb-1">
+                    {game.awayTeam} @ {game.homeTeam}
+                  </h4>
+                  <p className="text-secondary text-sm">{game.time}</p>
+                </div>
 
-              {isLockedIn ? (
-                <div className="space-y-2">
+                {isLockedIn ? (
                   <button
                     onClick={() => handleViewLockedPick(game, userPick.prediction_text)}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-all"
+                    className="w-full bg-primary py-3 rounded-lg font-semibold transition-all text-white"
                   >
-                    Locked In Pick ✓
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Locked In Pick
+                    </span>
                   </button>
-                  {!profile?.is_subscribed && (
-                    <p className="text-center text-sm text-slate-400">
-                      {profile?.free_picks_remaining} of 3 free picks remaining
-                    </p>
-                  )}
-                </div>
-              ) : canViewPick ? (
-                <button
-                  onClick={() => handleViewPick(game)}
-                  className="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-semibold transition-all"
-                >
-                  View Pick
-                </button>
-              ) : (
-                <button
-                  onClick={() => user ? setShowSubscriptionModal(true) : setShowAuthModal(true)}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-lg font-semibold transition-all"
-                >
-                  {user ? 'Unlock Unlimited Picks' : 'Sign In to View Picks'}
-                </button>
-              )}
-            </div>
-          )
-        })}
+                ) : canViewPick ? (
+                  <button
+                    onClick={() => handleViewPick(game)}
+                    className="w-full btn-secondary"
+                  >
+                    View Pick
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => user ? setShowSubscriptionModal(true) : setShowAuthModal(true)}
+                    className="w-full btn-primary"
+                  >
+                    {user ? 'Unlock Unlimited Picks' : 'Sign In to View Picks'}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* Modals */}

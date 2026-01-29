@@ -3,9 +3,8 @@ import { Header } from './components/Header/Header'
 import { Dashboard } from './components/Dashboard/Dashboard'
 
 function App() {
-
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen">
       <Header />
       <main>
         <Dashboard />

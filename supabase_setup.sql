@@ -15,9 +15,17 @@ CREATE TABLE IF NOT EXISTS public.user_picks (
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     game_id TEXT NOT NULL,
     sport TEXT NOT NULL,
+    prediction_type TEXT DEFAULT 'MONEYLINE' NOT NULL, -- 'MONEYLINE', 'SPREAD', 'OVER_UNDER', 'PARLAY'
     prediction_text TEXT NOT NULL,
+    predicted_outcome TEXT, -- Team/value we predicted
+    actual_outcome TEXT, -- Actual result
+    is_correct BOOLEAN, -- Whether our prediction was correct
+    game_final_score TEXT, -- Final score for reference
+    spread_line DECIMAL, -- The spread line at time of pick
+    over_under_line DECIMAL, -- The O/U line at time of pick
+    game_status TEXT DEFAULT 'pending', -- 'pending', 'completed', 'cancelled'
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    UNIQUE(user_id, game_id)
+    UNIQUE(user_id, game_id, prediction_type) -- Allow multiple picks per game per user
 );
 
 -- Enable Row Level Security

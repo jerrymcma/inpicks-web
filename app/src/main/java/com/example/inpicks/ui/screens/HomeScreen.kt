@@ -5,22 +5,35 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.inpicks.data.AuthRepository
 import com.example.inpicks.data.PicksRepository
 import com.example.inpicks.model.Game
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import kotlinx.coroutines.delay
+
+private val sports = listOf("NFL", "NBA")
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onNavigateToSubscription: () -> Unit
+    onNavigateToSubscription: () -> Unit,
+    onNavigateToRecord: () -> Unit
 ) {
     var selectedSport by remember { mutableStateOf("NFL") }
     // Using produceState to handle suspend function for Supabase call
@@ -32,15 +45,22 @@ fun HomeScreen(
     val freePicks by PicksRepository.freePicksRemaining.collectAsState()
     val isSubscribed by PicksRepository.isSubscribed.collectAsState()
     val currentUser by AuthRepository.currentUser.collectAsState()
+    val winRate by PicksRepository.winRate.collectAsState()
+    val userPicks by PicksRepository.userPicks.collectAsState()
     val scope = rememberCoroutineScope() // For launching suspend functions
 
     var selectedGame by remember { mutableStateOf<Game?>(null) }
+    var currentPredictionType by remember { mutableStateOf("MONEYLINE") }
     var viewedPrediction by remember { mutableStateOf<String?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
     var isLockingIn by remember { mutableStateOf(false) }
     var showAuthScreen by remember { mutableStateOf(false) }
     var gameToLockAfterAuth by remember { mutableStateOf<Game?>(null) }
     var showLockedPrediction by remember { mutableStateOf(false) }
+
+    // Define a common spacing for between major UI elements
+    val itemSpacing = 8.dp
+    val cardInternalPadding = 12.dp // Consistent internal padding for cards
 
     // Initial load of user profile if logged in or session restored
     LaunchedEffect(currentUser) {
@@ -50,17 +70,66 @@ fun HomeScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            PerformanceHeader()
-            SportSelector(selectedSport) { selectedSport = it }
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 48.dp)
+        ) {
+            Spacer(modifier = Modifier.height(28.dp)) // Top padding for header
+            // New Row for Logo and Record link
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = itemSpacing), // Added vertical padding to the row itself
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(style = SpanStyle(color = Color(0xFFFFEB3B))) {
+                            append("In")
+                        }
+                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onPrimaryContainer)) {
+                            append("picks")
+                        }
+                    },
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Record",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold, 
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { onNavigateToRecord() }
+                )
+            }
+            Spacer(modifier = Modifier.height(3.dp)) // Space below HeaderRow
+            PerformanceHeader(
+                modifier = Modifier.padding(horizontal = 16.dp), // Apply horizontal padding here
+                numberOfLockedPicks = unlockedGames.size,
+                winRate = if (userPicks.any { it.gameStatus == "completed" }) 
+                         "${String.format("%.1f", winRate)}%" else "--%",
+                onRecordClick = { onNavigateToRecord() },
+                cardInternalPadding = cardInternalPadding
+            )
+            Spacer(modifier = Modifier.height(itemSpacing * 2)) // Space below PerformanceHeader
             FreePicksStatus(
+                modifier = Modifier.padding(horizontal = 16.dp), // Apply horizontal padding here
                 isLoggedIn = currentUser != null,
                 freePicksRemaining = freePicks,
                 isSubscribed = isSubscribed,
                 onSignIn = { showAuthScreen = true },
-                onGoUnlimited = onNavigateToSubscription
+                onGoUnlimited = onNavigateToSubscription,
+                cardInternalPadding = cardInternalPadding
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(itemSpacing)) // Space below FreePicksStatus
+            SportSelector(
+                selectedSport,
+                onSelect = { selectedSport = it },
+                modifier = Modifier.padding(horizontal = 16.dp), // Apply horizontal padding here
+                itemSpacing = itemSpacing // Pass common spacing for internal use
+            )
+            Spacer(modifier = Modifier.height(itemSpacing)) // Space below SportSelector
             GamesList(
                 sport = selectedSport,
                 games = games.value,
@@ -69,6 +138,7 @@ fun HomeScreen(
                 freePicksRemaining = freePicks,
                 onViewClick = { game ->
                     selectedGame = game
+                    currentPredictionType = "MONEYLINE"
                     isGenerating = true
                     showLockedPrediction = false
                     scope.launch {
@@ -76,7 +146,45 @@ fun HomeScreen(
                             game.id,
                             selectedSport,
                             game.homeTeam,
-                            game.awayTeam
+                            game.awayTeam,
+                            "MONEYLINE"
+                        )
+                        viewedPrediction = prediction
+                        isGenerating = false
+                    }
+                },
+                onSpreadViewClick = { game ->
+                    selectedGame = game
+                    currentPredictionType = "SPREAD"
+                    isGenerating = true
+                    showLockedPrediction = false
+                    scope.launch {
+                        val prediction = PicksRepository.generatePrediction(
+                            game.id,
+                            selectedSport,
+                            game.homeTeam,
+                            game.awayTeam,
+                            "SPREAD",
+                            game.homeSpread,
+                            game.awaySpread
+                        )
+                        viewedPrediction = prediction
+                        isGenerating = false
+                    }
+                },
+                onOverUnderViewClick = { game ->
+                    selectedGame = game
+                    currentPredictionType = "OVER_UNDER"
+                    isGenerating = true
+                    showLockedPrediction = false
+                    scope.launch {
+                        val prediction = PicksRepository.generatePrediction(
+                            game.id,
+                            selectedSport,
+                            game.homeTeam,
+                            game.awayTeam,
+                            "OVER_UNDER",
+                            overUnder = game.overUnder
                         )
                         viewedPrediction = prediction
                         isGenerating = false
@@ -87,7 +195,9 @@ fun HomeScreen(
                     viewedPrediction = prediction
                     showLockedPrediction = true
                 },
-                onNavigateToSubscription = onNavigateToSubscription
+                onNavigateToSubscription = onNavigateToSubscription,
+                listContentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp), // Use parameter for LazyColumn content padding
+                listVerticalArrangement = Arrangement.spacedBy(4.dp) // Use parameter for spacing between LazyColumn items
             )
         }
 
@@ -102,9 +212,17 @@ fun HomeScreen(
                 },
                 title = {
                     Text(
-                        if (isGenerating) "Analyzing Matchup..." 
+                        if (isGenerating) "Analyzing ${when(currentPredictionType) {
+                            "SPREAD" -> "Spread"
+                            "OVER_UNDER" -> "Total"
+                            else -> "Matchup"
+                        }}..." 
                         else if (showLockedPrediction) "Your Locked In Pick"
-                        else "InPicks AI Prediction"
+                        else "InPicks ${when(currentPredictionType) {
+                            "SPREAD" -> "Spread"
+                            "OVER_UNDER" -> "Total"
+                            else -> "Moneyline"
+                        }} Prediction"
                     )
                 },
                 text = {
@@ -134,6 +252,7 @@ fun HomeScreen(
                                 } else if (freePicks > 0) { // User has free picks remaining
                                     isLockingIn = true
                                     scope.launch {
+                                        PicksRepository.setCurrentPredictionType(currentPredictionType)
                                         val success = PicksRepository.lockInGame(
                                             selectedGame!!.id,
                                             selectedSport,
@@ -156,6 +275,7 @@ fun HomeScreen(
                                 } else if (isSubscribed) { // User is subscribed
                                     isLockingIn = true
                                     scope.launch {
+                                        PicksRepository.setCurrentPredictionType(currentPredictionType)
                                         val success = PicksRepository.lockInGame(
                                             selectedGame!!.id,
                                             selectedSport,
@@ -244,38 +364,100 @@ fun HomeScreen(
                 }
             )
         }
+        Footer(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            isLoggedIn = currentUser != null,
+            onLogout = {
+                scope.launch {
+                    AuthRepository.signOut()
+                }
+            }
+        )
     }
 }
 
 @Composable
-fun PerformanceHeader() {
-    Card(
-        modifier = Modifier
+private fun Footer(modifier: Modifier = Modifier, isLoggedIn: Boolean, onLogout: () -> Unit) {
+    val uriHandler = LocalUriHandler.current
+    val footerTextStyle = MaterialTheme.typography.bodySmall.copy(
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    )
+
+    Row(
+        modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (isLoggedIn) {
+            Text(
+                text = "Logout",
+                style = footerTextStyle,
+                modifier = Modifier
+                    .clickable(onClick = onLogout)
+                    .padding(8.dp)
+            )
+        }
+        Text(
+            text = "Privacy",
+            style = footerTextStyle,
+            modifier = Modifier
+                .clickable { uriHandler.openUri("https://www.inpicks.com/privacy") }
+                .padding(8.dp)
+        )
+        Text(
+            text = "Terms",
+            style = footerTextStyle,
+            modifier = Modifier
+                .clickable { uriHandler.openUri("https://www.inpicks.com/terms") }
+                .padding(8.dp)
+        )
+        Text(
+            text = "Web App",
+            style = footerTextStyle,
+            modifier = Modifier
+                .clickable { uriHandler.openUri("https://app.inpicks.com/") }
+                .padding(8.dp)
+        )
+    }
+}
+
+@Composable
+fun PerformanceHeader(modifier: Modifier = Modifier, numberOfLockedPicks: Int, winRate: String, onRecordClick: () -> Unit, cardInternalPadding: Dp) {
+    val itemSpacing = 7.dp // Consistent spacing for internal elements
+    Card(
+        modifier = modifier.fillMaxWidth(), 
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(2.dp) 
                 .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(itemSpacing) 
         ) {
             Text(
-                text = "Inpicks AI Performance",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                text = buildAnnotatedString {
+                    withStyle(style = SpanStyle(color = Color(0xFFFFEB3B))) {
+                        append("In")
+                    }
+                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onPrimaryContainer)) {
+                        append("picks Performance")
+                    }
+                },
+                style = MaterialTheme.typography.titleMedium
             )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "82% Win Rate",
-                style = MaterialTheme.typography.displayMedium,
+                text = "$winRate Win Rate", 
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Last 30 Days",
-                style = MaterialTheme.typography.bodySmall,
+                text = "$numberOfLockedPicks Picks", 
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
@@ -283,20 +465,136 @@ fun PerformanceHeader() {
 }
 
 @Composable
-fun SportSelector(selected: String, onSelect: (String) -> Unit) {
-    val sports = listOf("NFL", "NBA")
+fun FreePicksStatus(
+    modifier: Modifier = Modifier, 
+    isLoggedIn: Boolean,
+    freePicksRemaining: Int,
+    isSubscribed: Boolean,
+    onSignIn: () -> Unit,
+    onGoUnlimited: () -> Unit,
+    nextRefillAtMillis: Long? = null,
+    cardInternalPadding: Dp 
+) {
+    // Hide entirely when subscribed to avoid occupying space
+    if (isSubscribed) return
+
+    val onContainer = MaterialTheme.colorScheme.onSecondaryContainer
+
+    // Drive a ticking clock if we have a target refill time
+    var nowMillis by remember(nextRefillAtMillis, freePicksRemaining) { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(nextRefillAtMillis) {
+        if (nextRefillAtMillis != null) {
+            while (true) {
+                val now = System.currentTimeMillis()
+                nowMillis = now
+                val remaining = (nextRefillAtMillis - nowMillis).coerceAtLeast(0L)
+                if (remaining <= 0L) break
+                val alignToSecond = (1000 - (now % 1000)).coerceIn(200, 1000)
+                delay(alignToSecond)
+            }
+        }
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(), 
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(2.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (!isLoggedIn) {
+                Button(onClick = onSignIn) {
+                    Text("Sign In")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "to use 3 free picks",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = onContainer
+                )
+            } else {
+                val clamped = freePicksRemaining.coerceIn(0, 3)
+                val countdownSuffix = nextRefillAtMillis?.let { target ->
+                    val remaining = (target - nowMillis).coerceAtLeast(0L)
+                    " · Resets in ${formatDuration(remaining)}"
+                } ?: ""
+                Text(
+                    text = "Free picks left: $clamped$countdownSuffix",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = onContainer
+                )
+                Button(onClick = onGoUnlimited) {
+                    Text("Go Unlimited")
+                }
+            }
+        }
+    }
+}
+
+private fun formatDuration(millis: Long): String {
+    val totalSeconds = millis / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+
+    return if (hours > 0) {
+        "%d:%02d:%02d".format(hours, minutes, seconds)
+    } else {
+        "%d:%02d".format(minutes, seconds)
+    }
+}
+
+@Composable
+fun SportSelector(
+    selected: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier, 
+    itemSpacing: Dp // Pass itemSpacing from HomeScreen
+) {
+    val buttonHeight = 48.dp // Default Material3 button height
+    val customHeight = buttonHeight * 1.5f // 1.5 times taller
+
     Row(
-        modifier = Modifier
+        modifier = modifier 
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(vertical = itemSpacing), 
+        horizontalArrangement = Arrangement.spacedBy(itemSpacing) // Use itemSpacing for horizontal arrangement as well
     ) {
         sports.forEach { sport ->
             FilterChip(
                 selected = sport == selected,
                 onClick = { onSelect(sport) },
-                label = { Text(sport) },
-                modifier = Modifier.weight(1f),
+                label = {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = when (sport) {
+                                "NFL" -> "🏈"
+                                "NBA" -> "🏀"
+                                else -> "🏈"
+                            },
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = sport,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(customHeight),
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimary
@@ -314,19 +612,24 @@ fun GamesList(
     predictions: Map<String, String>,
     freePicksRemaining: Int,
     onViewClick: (Game) -> Unit,
+    onSpreadViewClick: (Game) -> Unit,
+    onOverUnderViewClick: (Game) -> Unit,
     onLockedPickClick: (Game, String) -> Unit,
-    onNavigateToSubscription: () -> Unit
+    onNavigateToSubscription: () -> Unit,
+    listContentPadding: PaddingValues, 
+    listVerticalArrangement: Arrangement.Vertical 
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = listContentPadding,
+        verticalArrangement = listVerticalArrangement
     ) {
         item {
             Text(
                 text = "Upcoming $sport Games",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.fillMaxWidth(), // Make it fill width for center alignment
+                textAlign = TextAlign.Center // Center align the text
             )
         }
         items(games) { game ->
@@ -336,6 +639,8 @@ fun GamesList(
                 predictionText = predictions[game.id],
                 freePicksRemaining = freePicksRemaining,
                 onViewClick = { onViewClick(game) },
+                onSpreadViewClick = { onSpreadViewClick(game) },
+                onOverUnderViewClick = { onOverUnderViewClick(game) },
                 onLockedPickClick = { 
                     predictions[game.id]?.let { onLockedPickClick(game, it) }
                 },
@@ -353,20 +658,30 @@ fun GameCard(
     freePicksRemaining: Int,
     onViewClick: () -> Unit,
     onLockedPickClick: () -> Unit,
-    onNavigateToSubscription: () -> Unit
+    onNavigateToSubscription: () -> Unit,
+    onSpreadViewClick: () -> Unit = {},
+    onOverUnderViewClick: () -> Unit = {}
 ) {
+    val bottomPadding = if (!isLockedIn && freePicksRemaining > 0) 14.dp else 16.dp
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(
+                start = 16.dp,
+                top = 16.dp,
+                end = 16.dp,
+                bottom = bottomPadding
+            )
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${game.awayTeam} @ ${game.homeTeam}",
+                    text = "${game.awayTeam}\n@ ${game.homeTeam}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -378,6 +693,61 @@ fun GameCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )
+            
+            // Chart Icons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "📈",
+                    fontSize = 24.sp,
+                    color = Color.Red
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "📊",
+                    fontSize = 24.sp,
+                    color = Color.Red
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // Betting Lines Display
+            if (game.homeSpread != null && game.awaySpread != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Spread: ${game.awayTeam} ${if(game.awaySpread!! > 0) "+" else ""}${game.awaySpread}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        maxLines = 1
+                    )
+                    Text(
+                        text = "${game.homeTeam} ${if(game.homeSpread!! > 0) "+" else ""}${game.homeSpread}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        maxLines = 1
+                    )
+                }
+            }
+            
+            game.overUnder?.let { total ->
+                Text(
+                    text = "Total: O/U $total",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             if (isLockedIn) {
@@ -403,12 +773,65 @@ fun GameCard(
                 }
             } else {
                 if (freePicksRemaining > 0) {
-                    Button(
-                        onClick = onViewClick,
+                    // Multiple Prediction Buttons
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("View Pick", color = MaterialTheme.colorScheme.onSecondary)
+                        // Moneyline Prediction
+                        Button(
+                            onClick = onViewClick,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                        ) {
+                            Text(
+                                text = "🏆 Winner",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        
+                        // Spread Prediction (if available)
+                        if (game.homeSpread != null && game.awaySpread != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Button(
+                                    onClick = onSpreadViewClick,
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                                ) {
+                                    Text(
+                                        text = "Spread",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                
+                                // Over/Under Prediction (if available)
+                                game.overUnder?.let {
+                                    Button(
+                                        onClick = onOverUnderViewClick,
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                                    ) {
+                                        Text(
+                                            text = "Over/Under",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 } else {
                     Button(
