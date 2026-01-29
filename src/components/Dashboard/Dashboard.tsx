@@ -139,16 +139,16 @@ export const Dashboard: React.FC = () => {
 
       {!user && (
         <div className="card-secondary">
-          <div className="flex items-center justify-between">
-            <div className="text-white">
-              Sign in to use 3 free picks
-            </div>
+          <div className="flex items-center gap-4">
             <button
               onClick={() => setShowAuthModal(true)}
-              className="btn-primary"
+              className="btn-primary min-w-[110px] whitespace-nowrap"
             >
               Sign In
             </button>
+            <div className="text-white">
+              to use 3 free picks
+            </div>
           </div>
         </div>
       )}

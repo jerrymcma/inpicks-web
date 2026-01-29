@@ -15,7 +15,7 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => 
     <header className="bg-surface border-b border-slate-700/50">
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <button 
               onClick={() => onViewChange('dashboard')}
               className="logo-text cursor-pointer"
@@ -23,9 +23,6 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => 
               <span className="logo-in">In</span>
               <span className="logo-picks">picks</span>
             </button>
-          </div>
-
-          <div className="flex items-center gap-6">
             <button 
               onClick={() => onViewChange('record')}
               className={`text-sm transition-colors font-medium ${
@@ -36,7 +33,9 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => 
             >
               Record
             </button>
-            
+          </div>
+
+          <div className="flex items-center gap-6">
             {user && (
               <div className="flex items-center gap-4">
                 <div className="text-right">
