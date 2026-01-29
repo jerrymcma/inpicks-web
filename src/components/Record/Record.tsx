@@ -25,14 +25,6 @@ export const Record: React.FC = () => {
     return pick.is_correct ? 'win' : 'loss'
   }
 
-  const getResultColor = (result: string) => {
-    switch (result) {
-      case 'win': return 'text-green-win'
-      case 'loss': return 'text-red-400'
-      default: return 'text-secondary'
-    }
-  }
-
   const completedPicks = userPicks.filter(pick => pick.game_status === 'completed')
   const winRate = completedPicks.length > 0 
     ? ((completedPicks.filter(pick => pick.is_correct).length / completedPicks.length) * 100).toFixed(1)
