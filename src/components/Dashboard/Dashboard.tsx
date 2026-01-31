@@ -149,7 +149,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       return
     }
 
-    if (!profile) return
+    if (!profile) {
+      console.error('No profile found')
+      return
+    }
 
     // Check if user has picks available
     if (!profile.is_subscribed && profile.free_picks_remaining <= 0) {
@@ -158,9 +161,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       return
     }
 
-    if (!selectedGame) return
+    if (!selectedGame) {
+      console.error('No game selected')
+      return
+    }
+
+    if (!currentPrediction) {
+      console.error('No prediction available')
+      return
+    }
 
     setIsLockingIn(true)
+    console.log('Locking pick:', {
+      userId: user.id,
+      gameId: selectedGame.id,
+      sport: selectedGame.sport,
+      predictionType: selectedPredictionType,
+      predictionLength: currentPrediction.length
+    })
+    
     const success = await picksService.lockInPick(
       user.id,
       selectedGame.id,
@@ -170,6 +189,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       selectedPredictionType === 'SPREAD' ? selectedGame.spread : undefined,
       selectedPredictionType === 'OVER_UNDER' ? selectedGame.overUnder : undefined
     )
+
+    console.log('Lock pick result:', success)
 
     if (success) {
       await refetchProfile()
@@ -181,6 +202,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       if (!profile.is_subscribed && profile.free_picks_remaining <= 1) {
         setShowSubscriptionModal(true)
       }
+    } else {
+      console.error('Failed to lock pick')
+      alert('Failed to lock pick. Please check the console for errors.')
     }
 
     setIsLockingIn(false)
