@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { picksService } from '../../lib/picksService'
 import type { UserPick } from '../../types'
+import { formatPredictionText } from '../../lib/utils'
 
 export const Record: React.FC = () => {
   const { user } = useAuth()
@@ -100,7 +101,7 @@ export const Record: React.FC = () => {
                     <div className="text-primary text-xs font-semibold uppercase tracking-wide mb-2">
                       Your Prediction
                     </div>
-                    <p className="text-white font-medium mb-2">{pick.prediction_text}</p>
+                    <p className="text-white font-medium mb-2">{formatPredictionText(pick.prediction_text)}</p>
                     
                     {pick.game_final_score && (
                       <div className="text-secondary text-sm">

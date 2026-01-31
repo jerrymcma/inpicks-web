@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Game } from '../../types'
+import { formatPredictionText } from '../../lib/utils'
 
 interface PredictionModalProps {
   game: Game
@@ -41,7 +42,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
               <p className="text-slate-400">Generating AI prediction...</p>
             </div>
           ) : (
-            <p className="text-white leading-relaxed">{prediction}</p>
+            <p className="text-white leading-relaxed">{formatPredictionText(prediction)}</p>
           )}
         </div>
 
