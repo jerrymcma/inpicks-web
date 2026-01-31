@@ -7,6 +7,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 import androidx.compose.material3.*
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +51,18 @@ fun HomeScreen(
     val winRate by PicksRepository.winRate.collectAsState()
     val userPicks by PicksRepository.userPicks.collectAsState()
     val scope = rememberCoroutineScope() // For launching suspend functions
+
+    var isRefreshing by remember { mutableStateOf(false) }
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = {
+            scope.launch {
+                isRefreshing = true
+                PicksRepository.refreshUserProfile()
+                isRefreshing = false
+            }
+        }
+    )
 
     var selectedGame by remember { mutableStateOf<Game?>(null) }
     var currentPredictionType by remember { mutableStateOf("MONEYLINE") }
@@ -130,75 +145,86 @@ fun HomeScreen(
                 itemSpacing = itemSpacing // Pass common spacing for internal use
             )
             Spacer(modifier = Modifier.height(itemSpacing)) // Space below SportSelector
-            GamesList(
-                sport = selectedSport,
-                games = games.value,
-                unlockedGames = unlockedGames,
-                predictions = predictions,
-                freePicksRemaining = freePicks,
-                onViewClick = { game ->
-                    selectedGame = game
-                    currentPredictionType = "MONEYLINE"
-                    isGenerating = true
-                    showLockedPrediction = false
-                    scope.launch {
-                        val prediction = PicksRepository.generatePrediction(
-                            game.id,
-                            selectedSport,
-                            game.homeTeam,
-                            game.awayTeam,
-                            "MONEYLINE"
-                        )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pullRefresh(pullRefreshState)
+            ) {
+                GamesList(
+                    sport = selectedSport,
+                    games = games.value,
+                    unlockedGames = unlockedGames,
+                    predictions = predictions,
+                    freePicksRemaining = freePicks,
+                    onViewClick = { game ->
+                        selectedGame = game
+                        currentPredictionType = "MONEYLINE"
+                        isGenerating = true
+                        showLockedPrediction = false
+                        scope.launch {
+                            val prediction = PicksRepository.generatePrediction(
+                                game.id,
+                                selectedSport,
+                                game.homeTeam,
+                                game.awayTeam,
+                                "MONEYLINE"
+                            )
+                            viewedPrediction = prediction
+                            isGenerating = false
+                        }
+                    },
+                    onSpreadViewClick = { game ->
+                        selectedGame = game
+                        currentPredictionType = "SPREAD"
+                        isGenerating = true
+                        showLockedPrediction = false
+                        scope.launch {
+                            val prediction = PicksRepository.generatePrediction(
+                                game.id,
+                                selectedSport,
+                                game.homeTeam,
+                                game.awayTeam,
+                                "SPREAD",
+                                game.homeSpread,
+                                game.awaySpread
+                            )
+                            viewedPrediction = prediction
+                            isGenerating = false
+                        }
+                    },
+                    onOverUnderViewClick = { game ->
+                        selectedGame = game
+                        currentPredictionType = "OVER_UNDER"
+                        isGenerating = true
+                        showLockedPrediction = false
+                        scope.launch {
+                            val prediction = PicksRepository.generatePrediction(
+                                game.id,
+                                selectedSport,
+                                game.homeTeam,
+                                game.awayTeam,
+                                "OVER_UNDER",
+                                overUnder = game.overUnder
+                            )
+                            viewedPrediction = prediction
+                            isGenerating = false
+                        }
+                    },
+                    onLockedPickClick = { game, prediction ->
+                        selectedGame = game
                         viewedPrediction = prediction
-                        isGenerating = false
-                    }
-                },
-                onSpreadViewClick = { game ->
-                    selectedGame = game
-                    currentPredictionType = "SPREAD"
-                    isGenerating = true
-                    showLockedPrediction = false
-                    scope.launch {
-                        val prediction = PicksRepository.generatePrediction(
-                            game.id,
-                            selectedSport,
-                            game.homeTeam,
-                            game.awayTeam,
-                            "SPREAD",
-                            game.homeSpread,
-                            game.awaySpread
-                        )
-                        viewedPrediction = prediction
-                        isGenerating = false
-                    }
-                },
-                onOverUnderViewClick = { game ->
-                    selectedGame = game
-                    currentPredictionType = "OVER_UNDER"
-                    isGenerating = true
-                    showLockedPrediction = false
-                    scope.launch {
-                        val prediction = PicksRepository.generatePrediction(
-                            game.id,
-                            selectedSport,
-                            game.homeTeam,
-                            game.awayTeam,
-                            "OVER_UNDER",
-                            overUnder = game.overUnder
-                        )
-                        viewedPrediction = prediction
-                        isGenerating = false
-                    }
-                },
-                onLockedPickClick = { game, prediction ->
-                    selectedGame = game
-                    viewedPrediction = prediction
-                    showLockedPrediction = true
-                },
-                onNavigateToSubscription = onNavigateToSubscription,
-                listContentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp), // Use parameter for LazyColumn content padding
-                listVerticalArrangement = Arrangement.spacedBy(4.dp) // Use parameter for spacing between LazyColumn items
-            )
+                        showLockedPrediction = true
+                    },
+                    onNavigateToSubscription = onNavigateToSubscription,
+                    listContentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp), // Use parameter for LazyColumn content padding
+                    listVerticalArrangement = Arrangement.spacedBy(4.dp) // Use parameter for spacing between LazyColumn items
+                )
+                PullRefreshIndicator(
+                    refreshing = isRefreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+            }
         }
 
         if (selectedGame != null) {

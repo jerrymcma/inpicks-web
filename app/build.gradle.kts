@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.pullrefresh)
     implementation(libs.stripe.android)
     implementation(libs.stripe.paymentsheet)
     implementation(libs.supabase.postgrest)
