@@ -38,17 +38,6 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => 
                 )}
               </div>
             )}
-            
-            <button 
-              onClick={() => onViewChange('record')}
-              className={`text-base transition-colors font-medium ${
-                currentView === 'record' 
-                  ? 'text-accent' 
-                  : 'text-primary hover:text-accent'
-              }`}
-            >
-              Record
-            </button>
           </div>
         </div>
       </div>

@@ -8,7 +8,11 @@ import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
 import type { Game, Sport, UserPick } from '../../types'
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onViewChange: (view: 'dashboard' | 'record') => void
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const { user } = useAuth()
   const { profile, refetchProfile } = useProfile()
 
@@ -116,6 +120,16 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
+      {/* Record Link */}
+      <div className="flex justify-end -mb-4">
+        <button 
+          onClick={() => onViewChange('record')}
+          className="text-base text-primary hover:text-accent font-medium transition-colors"
+        >
+          Record
+        </button>
+      </div>
+
       {/* Performance Header */}
       <div className="performance-card">
         <div className="text-sm text-secondary font-semibold mb-2 uppercase tracking-wide">
