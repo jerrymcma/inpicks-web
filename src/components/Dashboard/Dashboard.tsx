@@ -374,7 +374,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                       {hasSpread && (
                         <button
                           onClick={() => handlePredictionButton(game, 'SPREAD')}
-                          className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${spreadLocked ? 'bg-primary' : 'bg-primary hover:bg-primary/80'}`}
+                          className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${spreadLocked ? 'bg-primary' : 'btn-primary'}`}
                         >
                           <span className="text-center block">
                             {spreadLocked ? 'Locked In' : 'Points Spread'}
@@ -384,7 +384,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                       {hasOverUnder && (
                         <button
                           onClick={() => handlePredictionButton(game, 'OVER_UNDER')}
-                          className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${overUnderLocked ? 'bg-primary' : 'bg-primary hover:bg-primary/80'}`}
+                          className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${overUnderLocked ? 'bg-primary' : 'btn-primary'}`}
                         >
                           <span className="text-center block">
                             {overUnderLocked ? 'Locked In' : 'Over/Under'}
