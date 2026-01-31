@@ -4,10 +4,9 @@ import { useProfile } from '../../hooks/useProfile'
 
 interface HeaderProps {
   onViewChange: (view: 'dashboard' | 'record') => void
-  currentView: 'dashboard' | 'record'
 }
 
-export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => {
+export const Header: React.FC<HeaderProps> = ({ onViewChange }) => {
   const { user } = useAuth()
   const { profile } = useProfile()
 

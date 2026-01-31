@@ -15,7 +15,7 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      <Header onViewChange={handleViewChange} currentView={currentView} />
+      <Header onViewChange={handleViewChange} />
       <main>
         {currentView === 'dashboard' ? <Dashboard onViewChange={handleViewChange} /> : <Record />}
       </main>
