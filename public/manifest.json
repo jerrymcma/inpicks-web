@@ -1,0 +1,20 @@
+{
+  "short_name": "Inpicks",
+  "name": "Inpicks - AI Sports Predictions",
+  "icons": [
+    {
+      "src": "inpicks_icon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "inpicks_icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#121212",
+  "background_color": "#121212"
+}
