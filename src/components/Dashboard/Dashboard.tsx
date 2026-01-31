@@ -6,6 +6,7 @@ import { oddsClient } from '../../lib/oddsClient'
 import { AuthModal } from '../Auth/AuthModal'
 import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
+import { FootballIcon, BasketballIcon } from '../Icons'
 import type { Game, Sport, UserPick } from '../../types'
 
 interface DashboardProps {
@@ -58,6 +59,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
         time: oddsClient.formatGameTime(g.commence_time),
         sport: selectedSport,
         odds: oddsClient.getSpread(g),
+        spread: oddsClient.getSpread(g),
+        overUnder: oddsClient.getOverUnder(g),
         confidence: 0, // Placeholder until AI analysis
         aiPrediction: '' // Placeholder until AI analysis
       }))
@@ -269,12 +272,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           <button
             key={sport}
             onClick={() => setSelectedSport(sport)}
-            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
               selectedSport === sport
                 ? 'btn-primary'
                 : 'btn-secondary hover:bg-slate-700'
             }`}
           >
+            {sport === 'NFL' && <FootballIcon className="w-5 h-5" />}
+            {sport === 'NBA' && <BasketballIcon className="w-5 h-5" />}
             {sport}
           </button>
         ))}
@@ -294,6 +299,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                   <h4 className="text-lg font-bold text-white mb-1">
                     {game.awayTeam} @ {game.homeTeam}
                   </h4>
+                  <div className="flex gap-3 mb-2">
+                    <span className="text-primary text-xs font-bold bg-primary/10 px-2 py-1 rounded">
+                      {game.spread}
+                    </span>
+                    <span className="text-accent text-xs font-bold bg-accent/10 px-2 py-1 rounded">
+                      {game.overUnder}
+                    </span>
+                  </div>
                   <p className="text-secondary text-sm">{game.time}</p>
                 </div>
 

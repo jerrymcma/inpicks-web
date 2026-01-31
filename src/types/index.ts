@@ -9,6 +9,8 @@ export interface Game {
   time: string
   sport: Sport
   odds: string
+  spread?: string
+  overUnder?: string
   confidence: number
   aiPrediction: string
 }

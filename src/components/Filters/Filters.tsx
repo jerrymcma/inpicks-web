@@ -1,5 +1,6 @@
 import React from 'react'
 import { Sport, FilterState } from '../../types'
+import { FootballIcon, BasketballIcon } from '../Icons'
 
 interface FiltersProps {
   filters: FilterState
@@ -21,12 +22,14 @@ export const Filters: React.FC<FiltersProps> = ({ filters, onFilterChange }) => 
               <button
                 key={sport}
                 onClick={() => onFilterChange({ ...filters, sport })}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 ${
                   filters.sport === sport
                     ? 'bg-primary-600 text-white'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
+                {sport === 'NFL' && <FootballIcon />}
+                {sport === 'NBA' && <BasketballIcon />}
                 {sport}
               </button>
             ))}

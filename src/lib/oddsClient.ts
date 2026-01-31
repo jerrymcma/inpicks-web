@@ -97,5 +97,17 @@ export const oddsClient = {
     const teamName = favorite.name.split(' ').pop(); // Last word usually works (Chiefs, Bills)
     
     return `${teamName} ${favorite.point}`;
+  },
+
+  getOverUnder(game: OddsGame): string {
+    const totalMarket = game.bookmakers[0]?.markets.find(
+      (m) => m.key === 'totals'
+    );
+    if (!totalMarket) return 'N/A';
+
+    const overOutcome = totalMarket.outcomes.find(o => o.name === 'Over');
+    if (!overOutcome || overOutcome.point === undefined) return 'N/A';
+
+    return `O/U ${overOutcome.point}`;
   }
 };

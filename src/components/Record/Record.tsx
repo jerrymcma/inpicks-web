@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { picksService } from '../../lib/picksService'
+import { FootballIcon, BasketballIcon } from '../Icons'
 import type { UserPick } from '../../types'
 import { formatPredictionText } from '../../lib/utils'
 
@@ -75,7 +76,9 @@ export const Record: React.FC = () => {
                 <div key={pick.id} className="card">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="text-lg font-semibold text-white mb-1">
+                      <h4 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+                        {pick.sport === 'NFL' && <FootballIcon />}
+                        {pick.sport === 'NBA' && <BasketballIcon />}
                         {pick.sport} Game
                       </h4>
                       <p className="text-secondary text-sm">
