@@ -14,33 +14,21 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => 
   return (
     <header className="bg-surface border-b border-slate-700/50">
       <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center">
-            <button 
-              onClick={() => onViewChange('dashboard')}
-              className="logo-text cursor-pointer"
-            >
-              <span className="logo-in">In</span>
-              <span className="logo-picks">picks</span>
-            </button>
-            <button 
-              onClick={() => onViewChange('record')}
-              className={`ml-auto text-sm transition-colors font-medium ${
-                currentView === 'record' 
-                  ? 'text-accent' 
-                  : 'text-primary hover:text-accent'
-              }`}
-            >
-              Record
-            </button>
-          </div>
+        <div className="flex justify-between items-start">
+          <button 
+            onClick={() => onViewChange('dashboard')}
+            className="logo-text cursor-pointer"
+          >
+            <span className="logo-in">In</span>
+            <span className="logo-picks">picks</span>
+          </button>
 
-          {user && (
-            <div className="flex items-center gap-4 justify-end">
+          <div className="flex flex-col items-end gap-1">
+            {user && (
               <div className="text-right">
                 <div className="text-sm font-medium text-white">{user.email}</div>
                 {profile && (
-                  <div className="text-xs text-secondary">
+                  <div className="text-xs text-secondary mb-1">
                     {profile.is_subscribed ? (
                       <span className="text-primary">Unlimited Picks ∞</span>
                     ) : (
@@ -49,14 +37,19 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => 
                   </div>
                 )}
               </div>
-              <button
-                onClick={signOut}
-                className="text-sm text-secondary hover:text-primary transition-colors font-medium"
-              >
-                Sign Out
-              </button>
-            </div>
-          )}
+            )}
+            
+            <button 
+              onClick={() => onViewChange('record')}
+              className={`text-sm transition-colors font-medium ${
+                currentView === 'record' 
+                  ? 'text-accent' 
+                  : 'text-primary hover:text-accent'
+              }`}
+            >
+              Record
+            </button>
+          </div>
         </div>
       </div>
     </header>

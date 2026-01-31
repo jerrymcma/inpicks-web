@@ -109,14 +109,19 @@ export const Dashboard: React.FC = () => {
     return userPicks.find(pick => pick.game_id === gameId)
   }
 
+  const completedPicks = userPicks.filter(pick => pick.game_status === 'completed')
+  const winRate = completedPicks.length > 0
+    ? ((completedPicks.filter(pick => pick.is_correct).length / completedPicks.length) * 100).toFixed(1)
+    : '0'
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Performance Header */}
       <div className="performance-card">
         <div className="text-sm text-secondary font-semibold mb-2 uppercase tracking-wide">
-          InPicks AI Performance
+          Your Performance
         </div>
-        <div className="text-4xl font-bold text-white mb-1">82%</div>
+        <div className="text-4xl font-bold text-white mb-1">{winRate}%</div>
         <div className="text-sm text-secondary/80">Win Rate</div>
       </div>
 
