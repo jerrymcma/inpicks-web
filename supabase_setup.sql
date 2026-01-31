@@ -67,6 +67,11 @@ CREATE POLICY "Users can insert their own picks"
     FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
+CREATE POLICY "Users can delete their own picks"
+    ON public.user_picks
+    FOR DELETE
+    USING (auth.uid() = user_id);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_user_picks_user_id ON public.user_picks(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_picks_game_id ON public.user_picks(game_id);
