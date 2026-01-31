@@ -377,7 +377,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                           className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${spreadLocked ? 'bg-primary' : 'btn-primary'}`}
                         >
                           <span className="text-center block">
-                            {spreadLocked ? 'Locked In' : 'Points Spread'}
+                            {spreadLocked ? 'Locked In' : 'Spread'}
                           </span>
                         </button>
                       )}
