@@ -1,5 +1,4 @@
 import { supabase } from './supabase'
-import { supabase } from './supabase'
 import { geminiClient } from './geminiClient'
 import type { Database } from '../types/database'
 import type { Sport, PredictionType } from '../types'
