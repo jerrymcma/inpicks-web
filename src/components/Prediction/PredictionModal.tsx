@@ -1,10 +1,11 @@
 import React from 'react'
-import type { Game } from '../../types'
+import type { Game, PredictionType } from '../../types'
 import { formatPredictionText } from '../../lib/utils'
 
 interface PredictionModalProps {
   game: Game
   prediction: string
+  predictionType: PredictionType
   isGenerating: boolean
   isLockingIn: boolean
   isLockedIn: boolean
@@ -16,6 +17,7 @@ interface PredictionModalProps {
 export const PredictionModal: React.FC<PredictionModalProps> = ({
   game,
   prediction,
+  predictionType,
   isGenerating,
   isLockingIn,
   isLockedIn,
@@ -24,13 +26,25 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   onClose
 }) => {
   const gameStarted = new Date() > new Date(game.commenceTime)
+  const typeLabel = predictionType === 'SPREAD'
+    ? 'Spread'
+    : predictionType === 'OVER_UNDER'
+      ? 'Over/Under'
+      : 'Matchup'
+
+  const title = isGenerating
+    ? `Analyzing ${typeLabel}...`
+    : isLockedIn
+      ? `Your Locked In ${typeLabel} Pick`
+      : `InPicks ${typeLabel} Prediction`
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-slate-800 rounded-lg max-w-lg w-full p-6">
-        <h2 className="text-2xl font-bold text-white mb-4">
-          {isGenerating ? 'Analyzing Matchup...' : isLockedIn ? 'Your Locked In Pick' : 'InPicks AI Prediction'}
+        <h2 className="text-2xl font-bold text-white mb-2">
+          {title}
         </h2>
+        <p className="text-sm text-slate-400 mb-4">{typeLabel} analysis powered by InPicks AI</p>
 
         <div className="mb-4">
           <h3 className="text-lg font-semibold text-white mb-2">

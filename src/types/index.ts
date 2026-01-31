@@ -16,6 +16,8 @@ export interface Game {
   aiPrediction: string
 }
 
+export type PredictionType = 'MONEYLINE' | 'SPREAD' | 'OVER_UNDER'
+
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type UserPick = Database['public']['Tables']['user_picks']['Row']
 

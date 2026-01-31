@@ -32,6 +32,8 @@ import kotlinx.coroutines.delay
 
 private val sports = listOf("NFL", "NBA")
 
+private fun pickKey(gameId: String, predictionType: String) = "$gameId_$predictionType"
+
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -121,7 +123,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(3.dp)) // Space below HeaderRow
             PerformanceHeader(
                 modifier = Modifier.padding(horizontal = 16.dp), // Apply horizontal padding here
-                numberOfLockedPicks = unlockedGames.size,
+                numberOfLockedPicks = userPicks.size,
                 winRate = if (userPicks.any { it.gameStatus == "completed" }) 
                          "${String.format("%.1f", winRate)}%" else "--%",
                 onRecordClick = { onNavigateToRecord() },
@@ -153,7 +155,7 @@ fun HomeScreen(
                 GamesList(
                     sport = selectedSport,
                     games = games.value,
-                    unlockedGames = unlockedGames,
+                    lockedPickKeys = unlockedGames,
                     predictions = predictions,
                     freePicksRemaining = freePicks,
                     onViewClick = { game ->
@@ -210,8 +212,9 @@ fun HomeScreen(
                             isGenerating = false
                         }
                     },
-                    onLockedPickClick = { game, prediction ->
+                    onLockedPickClick = { game, predictionType, prediction ->
                         selectedGame = game
+                        currentPredictionType = predictionType
                         viewedPrediction = prediction
                         showLockedPrediction = true
                     },
@@ -228,6 +231,7 @@ fun HomeScreen(
         }
 
         if (selectedGame != null) {
+            val currentPickIsLocked = unlockedGames.contains(pickKey(selectedGame.id, currentPredictionType))
             AlertDialog(
                 onDismissRequest = {
                     if (!isGenerating && !isLockingIn) {
@@ -268,70 +272,74 @@ fun HomeScreen(
                     }
                 },
                 confirmButton = {
-                    if (!isGenerating && viewedPrediction != null && !showLockedPrediction && !unlockedGames.contains(selectedGame!!.id)) {
-                        Button(
-                            onClick = {
-                                if (currentUser == null) {
-                                    gameToLockAfterAuth = selectedGame
-                                    selectedGame = null
-                                    showAuthScreen = true
-                                } else if (freePicks > 0) { // User has free picks remaining
-                                    isLockingIn = true
-                                    scope.launch {
-                                        PicksRepository.setCurrentPredictionType(currentPredictionType)
-                                        val success = PicksRepository.lockInGame(
-                                            selectedGame!!.id,
-                                            selectedSport,
-                                            viewedPrediction!!
-                                        )
-                                        isLockingIn = false
-                                        if (success) {
-                                            selectedGame = null
-                                            viewedPrediction = null
-                                            // Check if we should navigate to subscription (local state is already updated)
-                                            if (!isSubscribed && freePicks <= 1) {
+                    if (!isGenerating && viewedPrediction != null) {
+                        if (showLockedPrediction || currentPickIsLocked) {
+                            Button(onClick = {}, enabled = false) {
+                                Text("Locked In")
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    if (currentUser == null) {
+                                        gameToLockAfterAuth = selectedGame
+                                        selectedGame = null
+                                        showAuthScreen = true
+                                    } else if (freePicks > 0) {
+                                        isLockingIn = true
+                                        scope.launch {
+                                            PicksRepository.setCurrentPredictionType(currentPredictionType)
+                                            val success = PicksRepository.lockInGame(
+                                                selectedGame!!.id,
+                                                selectedSport,
+                                                viewedPrediction!!
+                                            )
+                                            isLockingIn = false
+                                            if (success) {
+                                                selectedGame = null
+                                                viewedPrediction = null
+                                                if (!isSubscribed && freePicks <= 1) {
+                                                    onNavigateToSubscription()
+                                                }
+                                            } else {
+                                                selectedGame = null
+                                                viewedPrediction = null
+                                            }
+                                        }
+                                    } else if (isSubscribed) {
+                                        isLockingIn = true
+                                        scope.launch {
+                                            PicksRepository.setCurrentPredictionType(currentPredictionType)
+                                            val success = PicksRepository.lockInGame(
+                                                selectedGame!!.id,
+                                                selectedSport,
+                                                viewedPrediction!!
+                                            )
+                                            isLockingIn = false
+                                            if (success) {
+                                                selectedGame = null
+                                                viewedPrediction = null
+                                            } else {
+                                                selectedGame = null
+                                                viewedPrediction = null
                                                 onNavigateToSubscription()
                                             }
-                                        } else {
-                                            // Handle error, but don't navigate to subscription if it's not a subscription issue
-                                            selectedGame = null
-                                            viewedPrediction = null
                                         }
+                                    } else {
+                                        selectedGame = null
+                                        viewedPrediction = null
+                                        onNavigateToSubscription()
                                     }
-                                } else if (isSubscribed) { // User is subscribed
-                                    isLockingIn = true
-                                    scope.launch {
-                                        PicksRepository.setCurrentPredictionType(currentPredictionType)
-                                        val success = PicksRepository.lockInGame(
-                                            selectedGame!!.id,
-                                            selectedSport,
-                                            viewedPrediction!!
-                                        )
-                                        isLockingIn = false
-                                        if (success) {
-                                            selectedGame = null
-                                            viewedPrediction = null
-                                        } else {
-                                            selectedGame = null
-                                            viewedPrediction = null
-                                            onNavigateToSubscription()
-                                        }
-                                    }
-                                } else { // No free picks left and not subscribed, navigate to subscription
-                                    selectedGame = null
-                                    viewedPrediction = null
-                                    onNavigateToSubscription()
+                                },
+                                enabled = !isLockingIn
+                            ) {
+                                if (isLockingIn) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                } else {
+                                    Text("Lock In Pick")
                                 }
-                            },
-                            enabled = !isLockingIn
-                        ) {
-                            if (isLockingIn) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            } else {
-                                Text("Lock In Pick")
                             }
                         }
                     }
@@ -634,16 +642,16 @@ fun SportSelector(
 fun GamesList(
     sport: String,
     games: List<Game>,
-    unlockedGames: Set<String>,
+    lockedPickKeys: Set<String>,
     predictions: Map<String, String>,
     freePicksRemaining: Int,
     onViewClick: (Game) -> Unit,
     onSpreadViewClick: (Game) -> Unit,
     onOverUnderViewClick: (Game) -> Unit,
-    onLockedPickClick: (Game, String) -> Unit,
+    onLockedPickClick: (Game, String, String) -> Unit,
     onNavigateToSubscription: () -> Unit,
-    listContentPadding: PaddingValues, 
-    listVerticalArrangement: Arrangement.Vertical 
+    listContentPadding: PaddingValues,
+    listVerticalArrangement: Arrangement.Vertical
 ) {
     LazyColumn(
         contentPadding = listContentPadding,
@@ -654,21 +662,21 @@ fun GamesList(
                 text = "Upcoming $sport Games",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.fillMaxWidth(), // Make it fill width for center alignment
-                textAlign = TextAlign.Center // Center align the text
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
         }
         items(games) { game ->
             GameCard(
                 game = game,
-                isLockedIn = unlockedGames.contains(game.id),
-                predictionText = predictions[game.id],
+                lockedPickKeys = lockedPickKeys,
+                predictions = predictions,
                 freePicksRemaining = freePicksRemaining,
                 onViewClick = { onViewClick(game) },
                 onSpreadViewClick = { onSpreadViewClick(game) },
                 onOverUnderViewClick = { onOverUnderViewClick(game) },
-                onLockedPickClick = { 
-                    predictions[game.id]?.let { onLockedPickClick(game, it) }
+                onLockedPickClick = { predictionType, predictionText ->
+                    onLockedPickClick(game, predictionType, predictionText)
                 },
                 onNavigateToSubscription = onNavigateToSubscription
             )
@@ -679,16 +687,29 @@ fun GamesList(
 @Composable
 fun GameCard(
     game: Game,
-    isLockedIn: Boolean,
-    predictionText: String?,
+    lockedPickKeys: Set<String>,
+    predictions: Map<String, String>,
     freePicksRemaining: Int,
     onViewClick: () -> Unit,
-    onLockedPickClick: () -> Unit,
-    onNavigateToSubscription: () -> Unit,
-    onSpreadViewClick: () -> Unit = {},
-    onOverUnderViewClick: () -> Unit = {}
+    onSpreadViewClick: () -> Unit,
+    onOverUnderViewClick: () -> Unit,
+    onLockedPickClick: (Game, String, String) -> Unit,
+    onNavigateToSubscription: () -> Unit
 ) {
-    val bottomPadding = if (!isLockedIn && freePicksRemaining > 0) 14.dp else 16.dp
+    val bottomPadding = 16.dp
+    val moneylineKey = pickKey(game.id, "MONEYLINE")
+    val spreadKey = pickKey(game.id, "SPREAD")
+    val overUnderKey = pickKey(game.id, "OVER_UNDER")
+    val moneylineLocked = lockedPickKeys.contains(moneylineKey)
+    val spreadLocked = lockedPickKeys.contains(spreadKey)
+    val overUnderLocked = lockedPickKeys.contains(overUnderKey)
+    val moneylinePrediction = predictions[moneylineKey]
+    val spreadPrediction = predictions[spreadKey]
+    val overUnderPrediction = predictions[overUnderKey]
+    val hasSpread = game.homeSpread != null && game.awaySpread != null
+    val hasOverUnder = game.overUnder != null
+    val clampedFreePicks = freePicksRemaining.coerceIn(0, 3)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -776,90 +797,96 @@ fun GameCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (isLockedIn) {
-                Column(
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = {
+                        if (moneylineLocked && moneylinePrediction != null) {
+                            onLockedPickClick(game, "MONEYLINE", moneylinePrediction)
+                        } else {
+                            onViewClick()
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (moneylineLocked) MaterialTheme.colorScheme.primary else Color(0xFF4CAF50)
+                    )
                 ) {
-                    Button(
-                        onClick = onLockedPickClick,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Text("Locked In Pick ✓")
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$freePicksRemaining of 3 free picks",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        text = if (moneylineLocked) "Locked In" else "Pick Winner",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
-            } else {
-                if (freePicksRemaining > 0) {
-                    // Multiple Prediction Buttons
-                    Column(
+
+                if (hasSpread || hasOverUnder) {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Moneyline Prediction
-                        Button(
-                            onClick = onViewClick,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                        ) {
-                            Text(
-                                text = "🏆 Winner",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-                        
-                        // Spread Prediction (if available)
-                        if (game.homeSpread != null && game.awaySpread != null) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Button(
-                                    onClick = onSpreadViewClick,
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-                                ) {
-                                    Text(
-                                        text = "Spread",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                                
-                                // Over/Under Prediction (if available)
-                                game.overUnder?.let {
-                                    Button(
-                                        onClick = onOverUnderViewClick,
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-                                    ) {
-                                        Text(
-                                            text = "Over/Under",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
+                        if (hasSpread) {
+                            Button(
+                                onClick = {
+                                    if (spreadLocked && spreadPrediction != null) {
+                                        onLockedPickClick(game, "SPREAD", spreadPrediction)
+                                    } else {
+                                        onSpreadViewClick()
                                     }
-                                }
+                                },
+                                modifier = if (hasOverUnder) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (spreadLocked) MaterialTheme.colorScheme.primary else Color(0xFF2196F3)
+                                )
+                            ) {
+                                Text(
+                                    text = if (spreadLocked) "Locked In" else "Points Spread",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+
+                        if (hasOverUnder) {
+                            Button(
+                                onClick = {
+                                    if (overUnderLocked && overUnderPrediction != null) {
+                                        onLockedPickClick(game, "OVER_UNDER", overUnderPrediction)
+                                    } else {
+                                        onOverUnderViewClick()
+                                    }
+                                },
+                                modifier = if (hasSpread) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (overUnderLocked) MaterialTheme.colorScheme.primary else Color(0xFF2196F3)
+                                )
+                            ) {
+                                Text(
+                                    text = if (overUnderLocked) "Locked In" else "Over/Under",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }
-                } else {
+                }
+
+                Text(
+                    text = "$clampedFreePicks of 3 free picks",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+
+                if (freePicksRemaining <= 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Button(
                         onClick = onNavigateToSubscription,
                         modifier = Modifier.fillMaxWidth(),

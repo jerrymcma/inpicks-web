@@ -7,7 +7,7 @@ import { AuthModal } from '../Auth/AuthModal'
 import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
 import { FootballIcon, BasketballIcon } from '../Icons'
-import type { Game, Sport, UserPick } from '../../types'
+import type { Game, Sport, UserPick, PredictionType } from '../../types'
 
 interface DashboardProps {
   onViewChange: (view: 'dashboard' | 'record') => void
@@ -36,6 +36,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLockingIn, setIsLockingIn] = useState(false)
   const [pendingLockIn, setPendingLockIn] = useState(false)
+  const [selectedPredictionType, setSelectedPredictionType] = useState<PredictionType>('MONEYLINE')
+  const [predictionsCache, setPredictionsCache] = useState<Record<string, string>>({})
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -100,19 +102,41 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     }
   }, [user, profile, pendingLockIn, selectedGame])
 
-  const handleViewPick = async (game: Game) => {
+  const handlePredictionButton = async (game: Game, type: PredictionType) => {
+    const lockedPick = getPickForGame(game.id, type)
     setSelectedGame(game)
-    setIsGenerating(true)
+    setSelectedPredictionType(type)
     setShowPredictionModal(true)
+
+    if (lockedPick) {
+      setCurrentPrediction(lockedPick.prediction_text)
+      setIsGenerating(false)
+      return
+    }
+
+    setCurrentPrediction('')
+    setIsGenerating(true)
+
+    const cacheKey = `${game.id}_${type}`
+    const cached = predictionsCache[cacheKey]
+    if (cached) {
+      setCurrentPrediction(cached)
+      setIsGenerating(false)
+      return
+    }
 
     const prediction = await picksService.generatePrediction(
       game.id,
       game.homeTeam,
       game.awayTeam,
-      game.sport
+      game.sport,
+      type,
+      type === 'SPREAD' ? game.spread : undefined,
+      type === 'OVER_UNDER' ? game.overUnder : undefined
     )
 
     setCurrentPrediction(prediction)
+    setPredictionsCache(prev => ({ ...prev, [cacheKey]: prediction }))
     setIsGenerating(false)
   }
 
@@ -141,7 +165,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       user.id,
       selectedGame.id,
       selectedGame.sport,
-      currentPrediction
+      currentPrediction,
+      selectedPredictionType,
+      selectedPredictionType === 'SPREAD' ? selectedGame.spread : undefined,
+      selectedPredictionType === 'OVER_UNDER' ? selectedGame.overUnder : undefined
     )
 
     if (success) {
@@ -159,17 +186,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     setIsLockingIn(false)
   }
 
-  const handleViewLockedPick = (game: Game, prediction: string) => {
-    setSelectedGame(game)
-    setCurrentPrediction(prediction)
-    setShowPredictionModal(true)
-  }
-
   const handleUnlockPick = async () => {
     if (!user || !selectedGame) return
 
     setIsLockingIn(true) // Reusing state for loading
-    const success = await picksService.unlockPick(user.id, selectedGame.id)
+    const success = await picksService.unlockPick(user.id, selectedGame.id, selectedPredictionType)
     
     if (success) {
       await refetchProfile()
@@ -180,14 +201,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     setIsLockingIn(false)
   }
 
-  const getPickForGame = (gameId: string): UserPick | undefined => {
-    return userPicks.find(pick => pick.game_id === gameId)
+  const getPickForGame = (gameId: string, predictionType?: PredictionType): UserPick | undefined => {
+    return userPicks.find(pick => pick.game_id === gameId && (!predictionType || pick.prediction_type === predictionType))
   }
 
   const completedPicks = userPicks.filter(pick => pick.game_status === 'completed')
   const winRate = completedPicks.length > 0
     ? ((completedPicks.filter(pick => pick.is_correct).length / completedPicks.length) * 100).toFixed(1)
     : '0'
+
+  const freePicksRemaining = user && profile ? profile.free_picks_remaining : 0
+  const clampedFreePicks = Math.min(Math.max(freePicksRemaining, 0), 3)
+  const shouldShowUnlockCta = Boolean(user && profile && !profile.is_subscribed && freePicksRemaining <= 0)
 
   return (
     <div className="container mx-auto px-4 py-2 space-y-6">
@@ -306,8 +331,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
         <h3 className="text-xl font-bold text-white mb-4">Upcoming {selectedSport} Games</h3>
         <div className="space-y-3">
           {games.map(game => {
-            const userPick = getPickForGame(game.id)
-            const isLockedIn = !!userPick
+            const hasSpread = Boolean(game.spread && !game.spread.toLowerCase().includes('n/a'))
+            const hasOverUnder = Boolean(game.overUnder && !game.overUnder.toLowerCase().includes('n/a'))
+            const moneylineLocked = Boolean(getPickForGame(game.id, 'MONEYLINE'))
+            const spreadLocked = hasSpread && Boolean(getPickForGame(game.id, 'SPREAD'))
+            const overUnderLocked = hasOverUnder && Boolean(getPickForGame(game.id, 'OVER_UNDER'))
 
             return (
               <div key={game.id} className="card">
@@ -326,26 +354,59 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                   <p className="text-secondary text-sm">{game.time}</p>
                 </div>
 
-                {isLockedIn ? (
+                <div className="flex flex-col gap-3">
                   <button
-                    onClick={() => handleViewLockedPick(game, userPick.prediction_text)}
-                    className="w-full bg-primary py-3 rounded-lg font-semibold transition-all text-white"
+                    onClick={() => handlePredictionButton(game, 'MONEYLINE')}
+                    className={`w-full py-3 rounded-lg font-semibold transition-all text-white ${moneylineLocked ? 'bg-primary' : 'btn-primary'}`}
                   >
                     <span className="flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Locked In Pick
+                      {moneylineLocked && (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                      {moneylineLocked ? 'Locked In' : 'Pick Winner'}
                     </span>
                   </button>
-                ) : (
-                  <button
-                    onClick={() => handleViewPick(game)}
-                    className="w-full btn-primary"
-                  >
-                    View Pick
-                  </button>
-                )}
+
+                  {(hasSpread || hasOverUnder) && (
+                    <div className="flex gap-3">
+                      {hasSpread && (
+                        <button
+                          onClick={() => handlePredictionButton(game, 'SPREAD')}
+                          className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${spreadLocked ? 'bg-primary' : 'bg-blue-600 hover:bg-blue-500'}`}
+                        >
+                          <span className="text-center block">
+                            {spreadLocked ? 'Locked In' : 'Points Spread'}
+                          </span>
+                        </button>
+                      )}
+                      {hasOverUnder && (
+                        <button
+                          onClick={() => handlePredictionButton(game, 'OVER_UNDER')}
+                          className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${overUnderLocked ? 'bg-primary' : 'bg-indigo-600 hover:bg-indigo-500'}`}
+                        >
+                          <span className="text-center block">
+                            {overUnderLocked ? 'Locked In' : 'Over/Under'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="text-xs text-white/60">
+                    {clampedFreePicks} of 3 free picks
+                  </div>
+
+                  {shouldShowUnlockCta && (
+                    <button
+                      onClick={() => setShowSubscriptionModal(true)}
+                      className="w-full py-3 rounded-lg font-semibold transition-all text-white bg-primary"
+                    >
+                      Unlock Unlimited Picks
+                    </button>
+                  )}
+                </div>
               </div>
             )
           })}
@@ -363,7 +424,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           prediction={currentPrediction}
           isGenerating={isGenerating}
           isLockingIn={isLockingIn}
-          isLockedIn={!!getPickForGame(selectedGame.id)}
+          isLockedIn={!!getPickForGame(selectedGame.id, selectedPredictionType)}
+          predictionType={selectedPredictionType}
           onLockIn={handleLockInPick}
           onUnlock={handleUnlockPick}
           onClose={() => setShowPredictionModal(false)}

@@ -12,10 +12,32 @@ if (API_KEY) {
   console.error('VITE_GEMINI_API_KEY is missing');
 }
 
+const cleanAnalysis = (text: string): string => {
+  if (text.startsWith('Okay') || text.startsWith('Sure')) {
+    const index = text.indexOf('AI Analysis');
+    if (index !== -1) {
+      return text.substring(index);
+    }
+  }
+  return text;
+};
+
+const runPrompt = async (prompt: string) => {
+  if (!model) return 'AI Analysis unavailable (Missing API Key)';
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = await response.text();
+    return cleanAnalysis(text);
+  } catch (e: any) {
+    console.error('Error generating prediction:', e);
+    return `Error generating prediction: ${e.message}`;
+  }
+};
+
 export const geminiClient = {
   async analyzeMatchup(sport: string, homeTeam: string, awayTeam: string): Promise<string> {
-    if (!model) return 'AI Analysis unavailable (Missing API Key)';
-
     const prompt = `
       You are a professional sports analyst with an 80% win rate.
       Analyze this ${sport} matchup: ${awayTeam} (Away) vs ${homeTeam} (Home).
@@ -31,22 +53,58 @@ export const geminiClient = {
       Do not include conversational fillers like "Okay, I'll provide my analysis". Start directly with the header.
     `;
 
-    try {
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      let text = response.text();
+    return runPrompt(prompt);
+  },
 
-      // Clean up conversational prefix
-      if (text.startsWith('Okay') || text.startsWith('Sure')) {
-        const index = text.indexOf('AI Analysis');
-        if (index !== -1) {
-          text = text.substring(index);
-        }
-      }
-      return text;
-    } catch (e: any) {
-      console.error('Error generating prediction:', e);
-      return `Error generating prediction: ${e.message}`;
-    }
+  async analyzeSpread(
+    sport: string,
+    homeTeam: string,
+    awayTeam: string,
+    spreadLine?: string
+  ): Promise<string> {
+    const prompt = `
+      You are a professional sports analyst with an 80% win rate.
+      Provide a breakdown of this ${sport} spread between ${awayTeam} (Away) and ${homeTeam} (Home).
+      
+      Spread Line: ${spreadLine ?? 'N/A'}
+      
+      Write an AI Analysis in this exact format:
+      AI Analysis of the Spread (${awayTeam} vs ${homeTeam})...
+      
+      Pick: [Team Name]
+      Confidence: [Number]%
+      Key Factor: [One short sentence explaining the decisive factor]
+      
+      Focus on edges that matter for the spread, like injuries, pace, or matchup advantages.
+      Start the response with the header shown above and avoid conversational preambles.
+    `;
+
+    return runPrompt(prompt);
+  },
+
+  async analyzeOverUnder(
+    sport: string,
+    homeTeam: string,
+    awayTeam: string,
+    overUnderLine?: string
+  ): Promise<string> {
+    const prompt = `
+      You are a professional sports analyst with an 80% win rate.
+      Analyze this ${sport} total between ${awayTeam} (Away) and ${homeTeam} (Home).
+      
+      Over/Under Line: ${overUnderLine ?? 'N/A'}
+      
+      Provide a structured response in this exact format:
+      AI Analysis of the Total (${awayTeam} vs ${homeTeam})...
+      
+      Pick: [Over/Under]
+      Confidence: [Number]%
+      Key Factor: [One short sentence explaining the decisive factor]
+      
+      Use tempo, recent scoring trends, and defensive matchups to support the total call.
+      Start directly with the header shown above and avoid filler words.
+    `;
+
+    return runPrompt(prompt);
   }
 };

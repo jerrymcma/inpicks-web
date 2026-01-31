@@ -1,24 +1,57 @@
 import { supabase } from './supabase'
+import { supabase } from './supabase'
 import { geminiClient } from './geminiClient'
 import type { Database } from '../types/database'
-import type { Sport } from '../types'
+import type { Sport, PredictionType } from '../types'
 
 type UserPickInsert = Database['public']['Tables']['user_picks']['Insert']
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
 type UserPickRow = Database['public']['Tables']['user_picks']['Row']
 
+const parseLineValue = (line?: string): number | null => {
+  if (!line) return null
+  const match = line.match(/-?\d+(\.\d+)?/)
+  return match ? Number(match[0]) : null
+}
+
 export const picksService = {
-  async generatePrediction(_gameId: string, homeTeam: string, awayTeam: string, sport: Sport): Promise<string> {
-    return await geminiClient.analyzeMatchup(sport, homeTeam, awayTeam)
+  async generatePrediction(
+    _gameId: string,
+    homeTeam: string,
+    awayTeam: string,
+    sport: Sport,
+    predictionType: PredictionType = 'MONEYLINE',
+    spreadLine?: string,
+    overUnderLine?: string
+  ): Promise<string> {
+    switch (predictionType) {
+      case 'SPREAD':
+        return await geminiClient.analyzeSpread(sport, homeTeam, awayTeam, spreadLine)
+      case 'OVER_UNDER':
+        return await geminiClient.analyzeOverUnder(sport, homeTeam, awayTeam, overUnderLine)
+      default:
+        return await geminiClient.analyzeMatchup(sport, homeTeam, awayTeam)
+    }
   },
 
-  async lockInPick(userId: string, gameId: string, sport: string, predictionText: string): Promise<boolean> {
+  async lockInPick(
+    userId: string,
+    gameId: string,
+    sport: string,
+    predictionText: string,
+    predictionType: PredictionType,
+    spreadLine?: string,
+    overUnderLine?: string
+  ): Promise<boolean> {
     try {
       const newPick: UserPickInsert = {
         user_id: userId,
         game_id: gameId,
         sport,
-        prediction_text: predictionText
+        prediction_type: predictionType,
+        prediction_text: predictionText,
+        spread_line: parseLineValue(spreadLine),
+        over_under_line: parseLineValue(overUnderLine)
       }
       // Insert pick into database
       const { error: pickError } = await supabase
@@ -79,14 +112,15 @@ export const picksService = {
     }
   },
 
-  async unlockPick(userId: string, gameId: string): Promise<boolean> {
+  async unlockPick(userId: string, gameId: string, predictionType: PredictionType): Promise<boolean> {
     try {
-      // Delete pick from database
+      // Delete pick from database for the specific prediction type
       const { error: deleteError } = await supabase
         .from('user_picks')
         .delete()
         .eq('user_id', userId)
         .eq('game_id', gameId)
+        .eq('prediction_type', predictionType)
 
       if (deleteError) {
         console.error('Error unlocking pick:', deleteError)

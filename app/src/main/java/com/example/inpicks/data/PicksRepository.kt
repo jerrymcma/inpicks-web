@@ -146,8 +146,8 @@ object PicksRepository {
                     }
                 }.decodeList<UserPick>()
 
-            _unlockedGames.value = unlocked.map { it.gameId }.toSet()
-            _predictions.value = unlocked.associate { it.gameId to it.predictionText }
+            _unlockedGames.value = unlocked.map { "${it.gameId}_${it.predictionType}" }.toSet()
+            _predictions.value = unlocked.associate { "${it.gameId}_${it.predictionType}" to it.predictionText }
             _userPicks.value = unlocked
             calculateWinRate()
 
