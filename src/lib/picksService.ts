@@ -1,25 +1,15 @@
 import { supabase } from './supabase'
+import { geminiClient } from './geminiClient'
 import type { Database } from '../types/database'
+import type { Sport } from '../types'
 
 type UserPickInsert = Database['public']['Tables']['user_picks']['Insert']
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
 type UserPickRow = Database['public']['Tables']['user_picks']['Row']
 
 export const picksService = {
-  async generatePrediction(gameId: string, homeTeam: string, awayTeam: string): Promise<string> {
-    // Simulate AI prediction generation with delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // Mock prediction based on game
-    const predictions: Record<string, string> = {
-      'nfl_chiefs_bills': 'Chiefs to win by 3-7 points. Their offense has been explosive, averaging 28 points per game.',
-      'nfl_49ers_packers': 'Packers slight edge at home. Look for a close game decided in the 4th quarter.',
-      'nba_lakers_celtics': 'Celtics win convincingly at home. Their defense will limit Lakers to under 105 points.',
-      'nba_warriors_nets': 'Warriors by 5+. Curry expected to have a big game in Brooklyn.',
-      'nba_heat_bucks': 'Bucks cover the spread. Giannis matchup advantage against Heat frontcourt.'
-    }
-
-    return predictions[gameId] || `AI analysis suggests a competitive matchup between ${awayTeam} and ${homeTeam}.`
+  async generatePrediction(_gameId: string, homeTeam: string, awayTeam: string, sport: Sport): Promise<string> {
+    return await geminiClient.analyzeMatchup(sport, homeTeam, awayTeam)
   },
 
   async lockInPick(userId: string, gameId: string, sport: string, predictionText: string): Promise<boolean> {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useProfile } from '../../hooks/useProfile'
 import { picksService } from '../../lib/picksService'
-import { getGamesBySport } from '../../data/gamesData'
+import { oddsClient } from '../../lib/oddsClient'
 import { AuthModal } from '../Auth/AuthModal'
 import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
@@ -19,7 +19,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const [selectedSport, setSelectedSport] = useState<Sport>('NFL')
   const [games, setGames] = useState<Game[]>([])
   const [userPicks, setUserPicks] = useState<UserPick[]>([])
-
+  
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showPredictionModal, setShowPredictionModal] = useState(false)
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
@@ -49,7 +49,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
 
   // Load games when sport changes
   useEffect(() => {
-    setGames(getGamesBySport(selectedSport))
+    const fetchGames = async () => {
+      const oddsGames = await oddsClient.getUpcomingGames(selectedSport)
+      const formattedGames: Game[] = oddsGames.map(g => ({
+        id: g.id,
+        homeTeam: g.home_team,
+        awayTeam: g.away_team,
+        time: oddsClient.formatGameTime(g.commence_time),
+        sport: selectedSport,
+        odds: oddsClient.getSpread(g),
+        confidence: 0, // Placeholder until AI analysis
+        aiPrediction: '' // Placeholder until AI analysis
+      }))
+      setGames(formattedGames)
+    }
+    fetchGames()
   }, [selectedSport])
 
   // Load user picks when user changes
@@ -90,12 +104,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     const prediction = await picksService.generatePrediction(
       game.id,
       game.homeTeam,
-      game.awayTeam
+      game.awayTeam,
+      game.sport
     )
 
     setCurrentPrediction(prediction)
     setIsGenerating(false)
   }
+
 
   const handleLockInPick = async () => {
     if (!user) {
