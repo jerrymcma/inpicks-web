@@ -347,7 +347,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                     <span className="text-primary text-sm font-bold bg-primary/10 px-2 py-1 rounded">
                       {game.spread}
                     </span>
-                    <span className="text-accent text-sm font-bold bg-accent/10 px-2 py-1 rounded">
+                    <span className="text-primary text-sm font-bold bg-primary/10 px-2 py-1 rounded">
                       {game.overUnder}
                     </span>
                   </div>
@@ -384,7 +384,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                       {hasOverUnder && (
                         <button
                           onClick={() => handlePredictionButton(game, 'OVER_UNDER')}
-                          className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${overUnderLocked ? 'bg-primary' : 'bg-accent hover:bg-accent/80'}`}
+                          className={`flex-1 py-3 rounded-lg font-semibold transition-all text-white ${overUnderLocked ? 'bg-primary' : 'bg-primary hover:bg-primary/80'}`}
                         >
                           <span className="text-center block">
                             {overUnderLocked ? 'Locked In' : 'Over/Under'}
