@@ -296,7 +296,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                 ) : (
                   <button
                     onClick={() => handleViewPick(game)}
-                    className="w-full btn-secondary"
+                    className="w-full btn-primary"
                   >
                     View Pick
                   </button>
