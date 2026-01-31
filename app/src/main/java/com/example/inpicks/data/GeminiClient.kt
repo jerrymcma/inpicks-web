@@ -20,16 +20,28 @@ object GeminiClient {
                 Analyze this $sport matchup: $awayTeam (Away) vs $homeTeam (Home).
                 
                 Provide a structured prediction in this exact format:
+                AI Analysis of the $awayTeam vs $homeTeam...
+                
                 Winner: [Team Name]
                 Confidence: [Number]%
                 Key Factor: [One short sentence explaining the decisive factor]
                 
                 Base your analysis on team stats, recent performance, and injuries if known.
+                Do not include conversational fillers like "Okay, I'll provide my analysis". Start directly with the header.
             """.trimIndent()
 
             try {
                 val response = generativeModel.generateContent(prompt)
-                response.text ?: "Analysis unavailable."
+                var text = response.text ?: "Analysis unavailable."
+                
+                // Clean up any conversational prefix if it still appears
+                if (text.startsWith("Okay", ignoreCase = true) || text.startsWith("Sure", ignoreCase = true)) {
+                    val index = text.indexOf("AI Analysis")
+                    if (index != -1) {
+                        text = text.substring(index)
+                    }
+                }
+                text
             } catch (e: Exception) {
                 e.printStackTrace()
                 "Error generating prediction: ${e.localizedMessage}"
@@ -52,16 +64,28 @@ object GeminiClient {
                 The favorite is $favorite giving $spreadValue points to $underdog.
                 
                 Provide your analysis in this exact format:
+                AI Analysis of the $awayTeam vs $homeTeam...
+                
                 Pick: [Team] ${if(homeSpread < 0) homeSpread else awaySpread}
                 Confidence: [Number]%
                 Reasoning: [2-3 sentences explaining why this team will cover the spread]
                 
                 Focus on: offensive/defensive efficiency, recent form, head-to-head history, and motivation factors.
+                Do not include conversational fillers. Start directly with the header.
             """.trimIndent()
 
             try {
                 val response = generativeModel.generateContent(prompt)
-                response.text ?: "Spread analysis unavailable."
+                var text = response.text ?: "Spread analysis unavailable."
+                
+                // Clean up
+                if (text.startsWith("Okay", ignoreCase = true) || text.startsWith("Sure", ignoreCase = true)) {
+                    val index = text.indexOf("AI Analysis")
+                    if (index != -1) {
+                        text = text.substring(index)
+                    }
+                }
+                text
             } catch (e: Exception) {
                 e.printStackTrace()
                 "Error generating spread prediction: ${e.localizedMessage}"
@@ -78,16 +102,28 @@ object GeminiClient {
                 TOTAL: Over/Under $total points
                 
                 Provide your analysis in this exact format:
+                AI Analysis of the $awayTeam vs $homeTeam...
+                
                 Pick: [Over/Under] $total
                 Confidence: [Number]%
                 Reasoning: [2-3 sentences explaining your total prediction]
                 
                 Consider: pace of play, offensive/defensive rankings, weather (if applicable), recent scoring trends, and head-to-head scoring history.
+                Do not include conversational fillers. Start directly with the header.
             """.trimIndent()
 
             try {
                 val response = generativeModel.generateContent(prompt)
-                response.text ?: "Total analysis unavailable."
+                var text = response.text ?: "Total analysis unavailable."
+                
+                // Clean up
+                if (text.startsWith("Okay", ignoreCase = true) || text.startsWith("Sure", ignoreCase = true)) {
+                    val index = text.indexOf("AI Analysis")
+                    if (index != -1) {
+                        text = text.substring(index)
+                    }
+                }
+                text
             } catch (e: Exception) {
                 e.printStackTrace()
                 "Error generating over/under prediction: ${e.localizedMessage}"

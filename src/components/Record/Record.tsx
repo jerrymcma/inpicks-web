@@ -86,7 +86,7 @@ export const Record: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
                         result === 'win' ? 'bg-green-900/30 text-green-win' :
                         result === 'loss' ? 'bg-red-900/30 text-red-400' :
                         'bg-slate-900/30 text-secondary'
