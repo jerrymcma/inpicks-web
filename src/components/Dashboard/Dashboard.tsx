@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useProfile } from '../../hooks/useProfile'
 import { picksService } from '../../lib/picksService'
@@ -13,7 +13,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const { profile, refetchProfile } = useProfile()
 
   const [selectedSport, setSelectedSport] = useState<Sport>('NFL')
@@ -23,11 +23,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showPredictionModal, setShowPredictionModal] = useState(false)
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  
+  // Menu states
+  const [showMenu, setShowMenu] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [currentPrediction, setCurrentPrediction] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLockingIn, setIsLockingIn] = useState(false)
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Load games when sport changes
   useEffect(() => {
@@ -120,14 +137,53 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
 
   return (
     <div className="container mx-auto px-4 py-2 space-y-6">
-      {/* Record Link */}
-      <div className="flex justify-end -mb-4">
+      {/* Top Controls */}
+      <div className="flex justify-between items-center -mb-4 relative z-10">
         <button 
           onClick={() => onViewChange('record')}
           className="text-base text-primary hover:text-accent font-medium transition-colors"
         >
           Record
         </button>
+
+        <div className="relative" ref={menuRef}>
+          <button 
+            onClick={() => setShowMenu(!showMenu)}
+            className="text-secondary hover:text-white transition-colors p-1"
+            aria-label="Menu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </button>
+
+          {showMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-[#1E1E1E] border border-slate-700 rounded-lg shadow-xl overflow-hidden">
+              <button 
+                onClick={() => { setShowTerms(true); setShowMenu(false); }} 
+                className="w-full text-left px-4 py-3 text-sm text-white hover:bg-slate-700 transition-colors border-b border-slate-700/50"
+              >
+                Terms
+              </button>
+              <button 
+                onClick={() => { setShowPrivacy(true); setShowMenu(false); }} 
+                className="w-full text-left px-4 py-3 text-sm text-white hover:bg-slate-700 transition-colors border-b border-slate-700/50"
+              >
+                Privacy
+              </button>
+              {user && (
+                <button 
+                  onClick={() => { signOut(); setShowMenu(false); }} 
+                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-slate-700 transition-colors"
+                >
+                  Sign Out
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Performance Header */}
@@ -265,6 +321,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
             setShowSubscriptionModal(false)
           }}
         />
+      )}
+
+      {/* Terms Modal */}
+      {showTerms && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1E1E1E] border border-slate-700 rounded-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Terms of Service</h2>
+            <div className="text-slate-300 space-y-4 text-sm mb-6">
+              <p>This service is for entertainment purposes only.</p>
+              <p>The AI-generated picks provided by Inpicks are not financial advice and should not be relied upon for gambling or betting decisions.</p>
+              <p>Inpicks is not a gambling site and does not accept or place bets. We are not responsible for any financial losses or outcomes resulting from the use of this information.</p>
+              <p>By using this service, you acknowledge that you are accessing this content for entertainment only.</p>
+            </div>
+            <button
+              onClick={() => setShowTerms(false)}
+              className="w-full py-3 rounded-lg bg-slate-700 text-white font-semibold hover:bg-slate-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Modal */}
+      {showPrivacy && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1E1E1E] border border-slate-700 rounded-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Privacy Policy</h2>
+            <div className="text-slate-300 space-y-4 text-sm mb-6">
+              <p>We value your privacy and are committed to protecting your personal information.</p>
+              <p>Your data is securely stored and never sold to or shared with third parties for marketing purposes.</p>
+              <p>We only collect essential information required to provide our prediction services and manage your account.</p>
+            </div>
+            <button
+              onClick={() => setShowPrivacy(false)}
+              className="w-full py-3 rounded-lg bg-slate-700 text-white font-semibold hover:bg-slate-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
