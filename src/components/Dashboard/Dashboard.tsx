@@ -34,6 +34,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const [currentPrediction, setCurrentPrediction] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLockingIn, setIsLockingIn] = useState(false)
+  const [pendingLockIn, setPendingLockIn] = useState(false)
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -64,6 +65,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     loadUserPicks()
   }, [user])
 
+  // Handle pending lock-in after sign in
+  useEffect(() => {
+    if (user && profile && pendingLockIn && selectedGame) {
+      const completePendingLockIn = async () => {
+        // Only trigger if we have the necessary data
+        // Reset pending state immediately to prevent double submission
+        setPendingLockIn(false)
+        
+        // Re-open prediction modal if it was closed (optional, but good for context)
+        setShowPredictionModal(true)
+        
+        await handleLockInPick()
+      }
+      completePendingLockIn()
+    }
+  }, [user, profile, pendingLockIn, selectedGame])
+
   const handleViewPick = async (game: Game) => {
     setSelectedGame(game)
     setIsGenerating(true)
@@ -81,6 +99,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
 
   const handleLockInPick = async () => {
     if (!user) {
+      setPendingLockIn(true)
       setShowPredictionModal(false)
       setShowAuthModal(true)
       return
@@ -252,7 +271,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           {games.map(game => {
             const userPick = getPickForGame(game.id)
             const isLockedIn = !!userPick
-            const canViewPick = user && profile && (profile.is_subscribed || profile.free_picks_remaining > 0)
 
             return (
               <div key={game.id} className="card">
@@ -275,19 +293,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                       Locked In Pick
                     </span>
                   </button>
-                ) : canViewPick ? (
+                ) : (
                   <button
                     onClick={() => handleViewPick(game)}
                     className="w-full btn-secondary"
                   >
                     View Pick
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => user ? setShowSubscriptionModal(true) : setShowAuthModal(true)}
-                    className="w-full btn-primary"
-                  >
-                    {user ? 'Unlock Unlimited Picks' : 'Sign In to View Picks'}
                   </button>
                 )}
               </div>
