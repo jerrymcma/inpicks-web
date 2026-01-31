@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const { profile } = useProfile()
 
   return (
