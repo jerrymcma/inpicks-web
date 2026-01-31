@@ -9,6 +9,7 @@ interface PredictionModalProps {
   isLockingIn: boolean
   isLockedIn: boolean
   onLockIn: () => void
+  onUnlock: () => void
   onClose: () => void
 }
 
@@ -19,8 +20,11 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   isLockingIn,
   isLockedIn,
   onLockIn,
+  onUnlock,
   onClose
 }) => {
+  const gameStarted = new Date() > new Date(game.commenceTime)
+
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-slate-800 rounded-lg max-w-lg w-full p-6">
@@ -60,6 +64,23 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
                 </span>
               ) : (
                 'Lock In Pick'
+              )}
+            </button>
+          )}
+
+          {isLockedIn && !gameStarted && !isGenerating && (
+            <button
+              onClick={onUnlock}
+              disabled={isLockingIn}
+              className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 py-3 rounded-lg font-semibold border border-red-600/30 transition-all"
+            >
+              {isLockingIn ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400"></div>
+                  Unlocking...
+                </span>
+              ) : (
+                'Unlock Pick'
               )}
             </button>
           )}

@@ -77,5 +77,49 @@ export const picksService = {
       console.error('Error fetching picks:', error)
       return []
     }
+  },
+
+  async unlockPick(userId: string, gameId: string): Promise<boolean> {
+    try {
+      // Delete pick from database
+      const { error: deleteError } = await supabase
+        .from('user_picks')
+        .delete()
+        .eq('user_id', userId)
+        .eq('game_id', gameId)
+
+      if (deleteError) {
+        console.error('Error unlocking pick:', deleteError)
+        return false
+      }
+
+      // Increment free picks
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('free_picks_remaining, is_subscribed')
+        .eq('id', userId)
+        .single()
+
+      if (!profile) return false
+
+      // Only increment if not subscribed
+      if (!profile.is_subscribed) {
+        const profileUpdate: ProfileUpdate = { free_picks_remaining: profile.free_picks_remaining + 1 }
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(profileUpdate)
+          .eq('id', userId)
+
+        if (updateError) {
+          console.error('Error updating picks:', updateError)
+          return false
+        }
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error in unlockPick:', error)
+      return false
+    }
   }
 }

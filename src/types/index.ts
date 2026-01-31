@@ -7,6 +7,7 @@ export interface Game {
   homeTeam: string
   awayTeam: string
   time: string
+  commenceTime: string
   sport: Sport
   odds: string
   spread?: string

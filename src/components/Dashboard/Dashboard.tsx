@@ -57,6 +57,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
         homeTeam: g.home_team,
         awayTeam: g.away_team,
         time: oddsClient.formatGameTime(g.commence_time),
+        commenceTime: g.commence_time,
         sport: selectedSport,
         odds: oddsClient.getSpread(g),
         spread: oddsClient.getSpread(g),
@@ -162,6 +163,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     setSelectedGame(game)
     setCurrentPrediction(prediction)
     setShowPredictionModal(true)
+  }
+
+  const handleUnlockPick = async () => {
+    if (!user || !selectedGame) return
+
+    setIsLockingIn(true) // Reusing state for loading
+    const success = await picksService.unlockPick(user.id, selectedGame.id)
+    
+    if (success) {
+      await refetchProfile()
+      const picks = await picksService.getUserPicks(user.id)
+      setUserPicks(picks)
+      setShowPredictionModal(false)
+    }
+    setIsLockingIn(false)
   }
 
   const getPickForGame = (gameId: string): UserPick | undefined => {
@@ -278,8 +294,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                 : 'btn-secondary hover:bg-slate-700'
             }`}
           >
-            {sport === 'NFL' && <FootballIcon className="w-5 h-5" />}
-            {sport === 'NBA' && <BasketballIcon className="w-5 h-5" />}
+            {sport === 'NFL' && <FootballIcon />}
+            {sport === 'NBA' && <BasketballIcon />}
             {sport}
           </button>
         ))}
@@ -349,6 +365,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           isLockingIn={isLockingIn}
           isLockedIn={!!getPickForGame(selectedGame.id)}
           onLockIn={handleLockInPick}
+          onUnlock={handleUnlockPick}
           onClose={() => setShowPredictionModal(false)}
         />
       )}
