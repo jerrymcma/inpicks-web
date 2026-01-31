@@ -13,7 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => 
 
   return (
     <header className="bg-surface border-b border-slate-700/50">
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-2">
         <div className="flex justify-between items-start">
           <button 
             onClick={() => onViewChange('dashboard')}
@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => 
             
             <button 
               onClick={() => onViewChange('record')}
-              className={`text-sm transition-colors font-medium ${
+              className={`text-base transition-colors font-medium ${
                 currentView === 'record' 
                   ? 'text-accent' 
                   : 'text-primary hover:text-accent'
