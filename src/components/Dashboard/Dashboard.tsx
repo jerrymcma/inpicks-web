@@ -119,7 +119,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     : '0'
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
+    <div className="container mx-auto px-4 py-2 space-y-6">
       {/* Record Link */}
       <div className="flex justify-end -mb-4">
         <button 
@@ -132,11 +132,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
 
       {/* Performance Header */}
       <div className="performance-card">
-        <div className="text-sm text-secondary font-semibold mb-2 uppercase tracking-wide">
+        <div className="text-sm text-primary font-semibold mb-2 uppercase tracking-wide">
           Your Performance
         </div>
         <div className="text-4xl font-bold text-white mb-1">{winRate}%</div>
-        <div className="text-sm text-secondary/80">Win Rate</div>
+        <div className="text-base text-accent font-medium">Win Rate</div>
       </div>
 
       {/* Free Picks Status */}
