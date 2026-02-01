@@ -1,9 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { supabase } from '../../lib/supabase'
-import { Database } from '../../types/database'
-
-type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
+import { createCheckoutSession, SubscriptionPlan } from '../../lib/stripeService'
 
 interface SubscriptionModalProps {
   onClose: () => void
@@ -12,28 +9,27 @@ interface SubscriptionModalProps {
 
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, onSuccess }) => {
   const { user } = useAuth()
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>('monthly')
   const [loading, setLoading] = useState(false)
 
-  const handleSubscribe = async () => {
-    if (!user) return
+  const handleSubscribe = async (plan: SubscriptionPlan) => {
+    if (!user?.email) return
 
     setLoading(true)
-
-    // For demo purposes, directly update the subscription status
-    // In production, integrate with Stripe or your payment processor
-    const profileUpdate: ProfileUpdate = { is_subscribed: true }
-    const { error } = await supabase
-      .from('profiles')
-      .update(profileUpdate) // Removed array wrapping
-      .eq('id', user.id)
-
-    if (!error) {
-      onSuccess()
-    } else {
-      console.error('Error subscribing:', error)
+    try {
+      const checkoutUrl = await createCheckoutSession({
+        userId: user.id,
+        plan,
+        email: user.email,
+      })
+      
+      window.location.href = checkoutUrl
+    } catch (error) {
+      console.error('Error creating checkout session:', error)
+      alert('Failed to start checkout. Please try again.')
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   return (
