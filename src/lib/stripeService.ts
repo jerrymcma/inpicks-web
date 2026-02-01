@@ -20,24 +20,36 @@ export const createCheckoutSession = async ({
   plan,
   email,
 }: CreateCheckoutSessionParams): Promise<string> => {
-  const response = await fetch('/api/create-checkout-session', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      userId,
-      plan,
-      email,
-    }),
-  })
+  try {
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        plan,
+        email,
+      }),
+    })
 
-  if (!response.ok) {
-    throw new Error('Failed to create checkout session')
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
+    }
+
+    const { url } = await response.json()
+    return url
+  } catch (error) {
+    console.error('Error creating checkout session:', error)
+    
+    // If API endpoint doesn't exist yet, provide helpful error
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error('Payment API not deployed yet. Please deploy the /api endpoints to Vercel first.')
+    }
+    
+    throw error
   }
-
-  const { url } = await response.json()
-  return url
 }
 
 export const createCustomerPortalSession = async (customerId: string): Promise<string> => {
