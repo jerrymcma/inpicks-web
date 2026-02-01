@@ -17,6 +17,11 @@ export type Database = {
           id: string
           is_subscribed: boolean
           next_refill_at: string | null
+          subscription_plan: string | null
+          subscription_end_date: string | null
+          stripe_customer_id: string | null
+          stripe_customer_email: string | null
+          stripe_subscription_id: string | null
           updated_at: string
         }
         Insert: {
@@ -26,6 +31,11 @@ export type Database = {
           id: string
           is_subscribed?: boolean
           next_refill_at?: string | null
+          subscription_plan?: string | null
+          subscription_end_date?: string | null
+          stripe_customer_id?: string | null
+          stripe_customer_email?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -35,6 +45,11 @@ export type Database = {
           id?: string
           is_subscribed?: boolean
           next_refill_at?: string | null
+          subscription_plan?: string | null
+          subscription_end_date?: string | null
+          stripe_customer_id?: string | null
+          stripe_customer_email?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Relationships: []

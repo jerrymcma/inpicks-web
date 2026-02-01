@@ -43,8 +43,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, o
 
         <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border border-purple-700 rounded-lg p-6 mb-6">
           <div className="text-center mb-6">
-            <div className="text-4xl font-bold text-white mb-2">$9.99</div>
+            <div className="text-4xl font-bold text-white mb-2">$19</div>
             <div className="text-purple-300">per month</div>
+            <div className="text-sm text-slate-400 mt-1">or $149/year (save $79)</div>
           </div>
 
           <div className="space-y-3 text-white">
