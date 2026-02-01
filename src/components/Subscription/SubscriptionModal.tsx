@@ -12,7 +12,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose })
   const [loading, setLoading] = useState(false)
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
-    if (!user?.email) return
+    if (!user?.email || loading) return
 
     setLoading(true)
     try {
@@ -26,7 +26,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose })
     } catch (error) {
       console.error('Error creating checkout session:', error)
       alert('Failed to start checkout. Please try again.')
-    } finally {
       setLoading(false)
     }
   }
