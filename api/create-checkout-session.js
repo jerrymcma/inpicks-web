@@ -26,8 +26,8 @@ module.exports = async function handler(req, res) {
     }
 
     const priceId = plan === 'monthly' 
-      ? process.env.VITE_STRIPE_MONTHLY_PRICE_ID 
-      : process.env.VITE_STRIPE_YEARLY_PRICE_ID
+      ? process.env.STRIPE_MONTHLY_PRICE_ID 
+      : process.env.STRIPE_YEARLY_PRICE_ID
 
     if (!priceId) {
       return res.status(400).json({ error: 'Invalid plan or missing price ID' })
