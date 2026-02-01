@@ -7,9 +7,8 @@ interface SubscriptionModalProps {
   onSuccess: () => void
 }
 
-export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, onSuccess }) => {
+export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose }) => {
   const { user } = useAuth()
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>('monthly')
   const [loading, setLoading] = useState(false)
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
