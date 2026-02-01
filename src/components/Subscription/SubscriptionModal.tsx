@@ -64,24 +64,30 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, o
           </div>
         </div>
 
-        <button
-          onClick={handleSubscribe}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-slate-700 disabled:to-slate-700 text-white py-3 rounded-lg font-semibold transition-all mb-3"
-        >
-          {loading ? 'Processing...' : 'Subscribe Now'}
-        </button>
+        <div className="space-y-3">
+          <button
+            onClick={() => handleSubscribe('monthly')}
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-slate-700 disabled:to-slate-700 text-white py-3 rounded-lg font-semibold transition-all"
+          >
+            {loading ? 'Processing...' : 'Subscribe Monthly - $19'}
+          </button>
+          
+          <button
+            onClick={() => handleSubscribe('yearly')}
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-slate-700 disabled:to-slate-700 text-white py-3 rounded-lg font-semibold transition-all"
+          >
+            {loading ? 'Processing...' : 'Subscribe Yearly - $149 (Save $79)'}
+          </button>
 
-        <button
-          onClick={onClose}
-          className="w-full text-slate-400 hover:text-white transition-colors"
-        >
-          Maybe Later
-        </button>
-
-        <p className="text-xs text-slate-500 text-center mt-4">
-          Demo mode - Subscription will be activated immediately
-        </p>
+          <button
+            onClick={onClose}
+            className="w-full text-slate-400 hover:text-white transition-colors mt-4"
+          >
+            Maybe Later
+          </button>
+        </div>
       </div>
     </div>
   )
