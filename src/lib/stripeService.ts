@@ -43,12 +43,15 @@ export const createCheckoutSession = async ({
   } catch (error) {
     console.error('Error creating checkout session:', error)
     
-    // If API endpoint doesn't exist yet, provide helpful error
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      throw new Error('Payment API not deployed yet. Please deploy the /api endpoints to Vercel first.')
-    }
+    // Temporary fallback: Redirect to create Payment Links manually in Stripe Dashboard
+    console.log('API endpoint not available, showing instructions for manual setup')
     
-    throw error
+    const priceId = plan === 'monthly' 
+      ? 'price_1SvuwpCWba50iPWenr2rmpel' 
+      : 'price_1Sw7KCWba50iPWesACN0a63'
+    
+    // For now, throw an error with instructions
+    throw new Error(`Payment system setup needed:\n\n1. Create Payment Link in Stripe Dashboard for price: ${priceId}\n2. Deploy API endpoints to Vercel\n3. Add environment variables to Vercel\n\nContact support for assistance.`)
   }
 }
 
