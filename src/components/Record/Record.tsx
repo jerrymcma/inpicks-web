@@ -22,6 +22,20 @@ export const Record: React.FC = () => {
     loadUserPicks()
   }, [user])
 
+  useEffect(() => {
+    if (!user) return
+
+    // Subscribe to updates on user_picks to reflect completed results and update win rate
+    const unsubscribe = picksService.subscribeToUserPicks(user.id, async () => {
+      const picks = await picksService.getUserPicks(user.id)
+      setUserPicks(picks)
+    })
+
+    return () => {
+      unsubscribe?.()
+    }
+  }, [user])
+
   const getPickResult = (pick: UserPick) => {
     if (pick.game_status !== 'completed') return 'pending'
     return pick.is_correct ? 'win' : 'loss'
