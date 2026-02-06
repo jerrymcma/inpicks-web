@@ -331,6 +331,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
         </div>
       )}
 
+      {/* Subscribed User Status */}
+      {user && profile && profile.is_subscribed && (
+        <div className="card-secondary">
+          <div className="text-primary font-semibold">
+            ∞ Inpicks
+          </div>
+        </div>
+      )}
+
       {!user && (
         <div className="card-secondary">
           <div className="flex items-center gap-4">
@@ -434,9 +443,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                     </div>
                   )}
 
-                  <div className="text-xs text-white/60">
-                    {profile?.is_subscribed ? '∞ Inpicks' : `${clampedFreePicks} of 3 free picks`}
-                  </div>
+                  {!profile?.is_subscribed && (
+                    <div className="text-xs text-white/60">
+                      {clampedFreePicks} of 3 free picks
+                    </div>
+                  )}
 
                   {shouldShowUnlockCta && (
                     <button
