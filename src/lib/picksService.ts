@@ -13,6 +13,49 @@ const parseLineValue = (line?: string): number | null => {
   return match ? Number(match[0]) : null
 }
 
+const extractPredictedOutcome = (
+  predictionText: string,
+  homeTeam: string,
+  awayTeam: string,
+  predictionType: PredictionType
+): string => {
+  // Extract the predicted outcome from AI text
+  const lowerText = predictionText.toLowerCase()
+
+  if (predictionType === 'OVER_UNDER') {
+    // Look for "Over" or "Under" in the prediction
+    if (lowerText.includes('pick: over') || lowerText.includes('take the over')) {
+      return 'Over'
+    } else if (lowerText.includes('pick: under') || lowerText.includes('take the under')) {
+      return 'Under'
+    }
+    return 'Unknown'
+  }
+
+  // For MONEYLINE and SPREAD, determine home or away
+  const winnerMatch = predictionText.match(/Winner:\s*([^\n]+)/i) || 
+                      predictionText.match(/Pick:\s*([^\n]+)/i)
+
+  if (winnerMatch) {
+    const winner = winnerMatch[1].trim()
+    // Check if the winner matches home or away team
+    if (winner.toLowerCase().includes(homeTeam.toLowerCase())) {
+      return 'home'
+    } else if (winner.toLowerCase().includes(awayTeam.toLowerCase())) {
+      return 'away'
+    }
+  }
+
+  // Fallback: check if home or away team is mentioned more prominently
+  if (lowerText.includes(homeTeam.toLowerCase()) && !lowerText.includes(awayTeam.toLowerCase())) {
+    return 'home'
+  } else if (lowerText.includes(awayTeam.toLowerCase()) && !lowerText.includes(homeTeam.toLowerCase())) {
+    return 'away'
+  }
+
+  return 'Unknown'
+}
+
 export const picksService = {
   async generatePrediction(
     _gameId: string,
@@ -40,15 +83,23 @@ export const picksService = {
     predictionText: string,
     predictionType: PredictionType,
     spreadLine?: string,
-    overUnderLine?: string
+    overUnderLine?: string,
+    homeTeam?: string,
+    awayTeam?: string
   ): Promise<boolean> {
     try {
+      // Extract predicted outcome from AI text
+      const predictedOutcome = homeTeam && awayTeam 
+        ? extractPredictedOutcome(predictionText, homeTeam, awayTeam, predictionType)
+        : 'Unknown'
+
       const newPick: UserPickInsert = {
         user_id: userId,
         game_id: gameId,
         sport,
         prediction_type: predictionType,
         prediction_text: predictionText,
+        predicted_outcome: predictedOutcome,
         spread_line: parseLineValue(spreadLine),
         over_under_line: parseLineValue(overUnderLine)
       }
