@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange }) => {
                   <div className="text-xs text-secondary mb-1">
                     {profile.is_subscribed ? (
                       <span className="font-semibold">
-                        <span className="text-accent">∞ In</span>
+                        <span className="text-accent">♾️ In</span>
                         <span className="text-white">picks</span>
                       </span>
                     ) : (
