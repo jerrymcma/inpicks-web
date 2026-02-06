@@ -99,6 +99,7 @@ export const picksService = {
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
         throw error
@@ -108,6 +109,31 @@ export const picksService = {
     } catch (error) {
       console.error('Error fetching picks:', error)
       return []
+    }
+  },
+
+  subscribeToUserPicks(userId: string, onChange: () => void): () => void {
+    const channel = supabase
+      .channel(`user_picks_${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_picks', filter: `user_id=eq.${userId}` },
+        () => {
+          try {
+            onChange()
+          } catch (e) {
+            console.error('Error handling user_picks change:', e)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      try {
+        supabase.removeChannel(channel)
+      } catch (e) {
+        console.error('Error unsubscribing from user_picks channel:', e)
+      }
     }
   },
 
