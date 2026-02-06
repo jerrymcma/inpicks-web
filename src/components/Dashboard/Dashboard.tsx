@@ -331,15 +331,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
         </div>
       )}
 
-      {/* Subscribed User Status */}
-      {user && profile && profile.is_subscribed && (
-        <div className="card-secondary">
-          <div className="text-primary font-semibold">
-            ∞ Inpicks
-          </div>
-        </div>
-      )}
-
       {!user && (
         <div className="card-secondary">
           <div className="flex items-center gap-4">

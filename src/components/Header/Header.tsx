@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ onViewChange }) => {
                 {profile && (
                   <div className="text-xs text-secondary mb-1">
                     {profile.is_subscribed ? (
-                      <span className="text-primary">Unlimited Picks ∞</span>
+                      <span className="text-primary font-semibold">∞ Inpicks</span>
                     ) : (
                       `${profile.free_picks_remaining} free picks remaining`
                     )}
