@@ -435,7 +435,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                   )}
 
                   <div className="text-xs text-white/60">
-                    {clampedFreePicks} of 3 free picks
+                    {profile?.is_subscribed ? '∞ Inpicks' : `${clampedFreePicks} of 3 free picks`}
                   </div>
 
                   {shouldShowUnlockCta && (

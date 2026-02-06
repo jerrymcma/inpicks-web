@@ -72,7 +72,7 @@ export const Record: React.FC = () => {
 
       {/* Picks History */}
       <div>
-        <h3 className="text-xl font-bold text-white mb-4">Pick History</h3>
+        <h3 className="text-xl font-bold text-white mb-4">Record</h3>
         
         {loading ? (
           <div className="text-center py-8">
