@@ -99,20 +99,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     }
   }, [user])
 
-  // Subscribe to realtime updates so completed results and win rate reflect immediately
-  useEffect(() => {
-    if (!user) return
-
-    const unsubscribe = picksService.subscribeToUserPicks(user.id, async () => {
-      const picks = await picksService.getUserPicks(user.id)
-      setUserPicks(picks)
-    })
-
-    return () => {
-      unsubscribe?.()
-    }
-  }, [user])
-
   // Handle pending lock-in after sign in
   useEffect(() => {
     if (user && profile && pendingLockIn && selectedGame) {
@@ -215,7 +201,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       currentPrediction,
       selectedPredictionType,
       selectedPredictionType === 'SPREAD' ? selectedGame.spread : undefined,
-      selectedPredictionType === 'OVER_UNDER' ? selectedGame.overUnder : undefined
+      selectedPredictionType === 'OVER_UNDER' ? selectedGame.overUnder : undefined,
+      selectedGame.homeTeam,
+      selectedGame.awayTeam
     )
 
     console.log('Lock pick result:', success)
