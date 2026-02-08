@@ -3,6 +3,11 @@
 
 module.exports = async (req, res) => {
   try {
+    // Verify the request is from Vercel Cron
+    if (req.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    
     console.log('Cron job triggered: Updating game scores...')
     
     const supabaseUrl = process.env.VITE_SUPABASE_URL
