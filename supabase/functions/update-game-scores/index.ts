@@ -111,11 +111,12 @@ Deno.serve(async (req) => {
 })
 
 async function resolvePicksForGame(game: any) {
-  // Fetch pending picks for this game
+  // Fetch pending picks for this game by matching team names instead of game_id
+  // This is necessary because game IDs from Odds API don't match SportRadar IDs
   const { data: picks, error } = await supabase
     .from('user_picks')
     .select('*')
-    .eq('game_id', game.id)
+    .eq('sport', game.sport)
     .eq('game_status', 'pending')
 
   if (error) {
@@ -123,25 +124,52 @@ async function resolvePicksForGame(game: any) {
     return
   }
 
-  for (const pick of picks) {
+  // Filter picks that match this game's teams (handle team name variations)
+  const matchingPicks = picks?.filter(pick => {
+    if (!pick.home_team || !pick.away_team) return false
+    
+    // Normalize team names for matching (remove common suffixes, case insensitive)
+    const normalizeTeam = (team: string) => 
+      team.toLowerCase().replace(/\s+(fc|sc|united|city|town)$/i, '').trim()
+    
+    const pickHome = normalizeTeam(pick.home_team)
+    const pickAway = normalizeTeam(pick.away_team)
+    const gameHome = normalizeTeam(game.home_team)
+    const gameAway = normalizeTeam(game.away_team)
+    
+    return (pickHome.includes(gameHome) || gameHome.includes(pickHome)) &&
+           (pickAway.includes(gameAway) || gameAway.includes(pickAway))
+  }) || []
+
+  console.log(`Found ${matchingPicks.length} picks to resolve for ${game.away_team} @ ${game.home_team}`)
+
+  for (const pick of matchingPicks) {
     let isCorrect = false
     
-    // Logic to determine if pick is correct
-    // This is simple Moneyline logic. Needs expansion for Spread/Totals.
+    // Determine if pick is correct based on prediction type
     if (pick.prediction_type === 'MONEYLINE' || !pick.prediction_type) { 
-       // Simple heuristic based on prediction text or structured field if we add it
-       // ideally user_picks has 'predicted_outcome' = 'home' | 'away'
-       
-       // Example logic:
        if (pick.predicted_outcome === 'home' && game.winner === 'home') isCorrect = true
        else if (pick.predicted_outcome === 'away' && game.winner === 'away') isCorrect = true
-       // Fallback text parsing if structured data missing (fragile)
-       else if (pick.prediction_text.toLowerCase().includes(game.home_team.toLowerCase()) && game.winner === 'home') isCorrect = true
-       else if (pick.prediction_text.toLowerCase().includes(game.away_team.toLowerCase()) && game.winner === 'away') isCorrect = true
+    } else if (pick.prediction_type === 'SPREAD' && pick.spread_line) {
+      // Calculate if pick covered the spread
+      const adjustedHomeScore = game.home_score + pick.spread_line
+      if (pick.predicted_outcome === 'home') {
+        isCorrect = adjustedHomeScore > game.away_score
+      } else if (pick.predicted_outcome === 'away') {
+        isCorrect = game.away_score > adjustedHomeScore
+      }
+    } else if (pick.prediction_type === 'OVER_UNDER' && pick.over_under_line) {
+      // Calculate if total went over or under
+      const totalScore = game.home_score + game.away_score
+      if (pick.predicted_outcome === 'Over') {
+        isCorrect = totalScore > pick.over_under_line
+      } else if (pick.predicted_outcome === 'Under') {
+        isCorrect = totalScore < pick.over_under_line
+      }
     }
 
     // Update the pick
-    await supabase
+    const { error: updateError } = await supabase
       .from('user_picks')
       .update({
         game_status: 'completed',
@@ -150,6 +178,12 @@ async function resolvePicksForGame(game: any) {
         actual_outcome: game.winner === 'home' ? 'Home Win' : 'Away Win'
       })
       .eq('id', pick.id)
+
+    if (updateError) {
+      console.error('Error updating pick:', updateError)
+    } else {
+      console.log(`Updated pick ${pick.id}: ${isCorrect ? 'CORRECT' : 'INCORRECT'}`)
+    }
   }
 }
 

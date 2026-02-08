@@ -69,6 +69,8 @@ export type Database = {
           spread_line: number | null
           over_under_line: number | null
           game_status: string
+          home_team: string | null
+          away_team: string | null
           created_at: string
         }
         Insert: {
@@ -85,6 +87,8 @@ export type Database = {
           spread_line?: number | null
           over_under_line?: number | null
           game_status?: string
+          home_team?: string | null
+          away_team?: string | null
           created_at?: string
         }
         Update: {
@@ -98,6 +102,8 @@ export type Database = {
           actual_outcome?: string | null
           is_correct?: boolean | null
           game_final_score?: string | null
+          home_team?: string | null
+          away_team?: string | null
           spread_line?: number | null
           over_under_line?: number | null
           game_status?: string

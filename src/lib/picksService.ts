@@ -101,7 +101,9 @@ export const picksService = {
         prediction_text: predictionText,
         predicted_outcome: predictedOutcome,
         spread_line: parseLineValue(spreadLine),
-        over_under_line: parseLineValue(overUnderLine)
+        over_under_line: parseLineValue(overUnderLine),
+        home_team: homeTeam || null,
+        away_team: awayTeam || null
       }
       // Insert pick into database
       const { error: pickError } = await supabase
