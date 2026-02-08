@@ -3,5 +3,9 @@
     "api/**/*.js": {
       "maxDuration": 10
     }
-  }
+  },
+  "crons": [{
+    "path": "/api/update-scores",
+    "schedule": "*/5 * * * *"
+  }]
 }
