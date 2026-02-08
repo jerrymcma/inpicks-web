@@ -404,13 +404,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           </button>
         </div>
         <div className="space-y-3">
-          {console.log('🏟️ Rendering games list, games count:', games.length)}
           {games.length === 0 ? (
             <div className="text-center text-gray-400 py-8">
               No upcoming games available. Check console for API issues.
             </div>
-          ) : null}
-          {games.map(game => {
+          ) : (
+            <>
+              {(() => {
+                console.log('🏟️ Rendering games list, games count:', games.length);
+                return null;
+              })()}
+              {games.map(game => {
             const hasSpread = Boolean(game.spread && !game.spread.toLowerCase().includes('n/a'))
             const hasOverUnder = Boolean(game.overUnder && !game.overUnder.toLowerCase().includes('n/a'))
             const moneylineLocked = Boolean(getPickForGame(game.id, 'MONEYLINE'))
@@ -492,6 +496,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
               </div>
             )
           })}
+            </>
+          )}
         </div>
       </div>
 
