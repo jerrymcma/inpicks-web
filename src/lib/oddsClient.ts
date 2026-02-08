@@ -25,8 +25,10 @@ export interface OddsGame {
 
 export const oddsClient = {
   async getUpcomingGames(sport: Sport): Promise<OddsGame[]> {
+    console.log('🎯 Fetching games for sport:', sport);
+    
     if (!API_KEY) {
-      console.error('ODDS_API_KEY is missing');
+      console.error('❌ ODDS_API_KEY is missing');
       return [];
     }
 
@@ -48,19 +50,32 @@ export const oddsClient = {
         sportKey = 'americanfootball_nfl';
     }
 
+    const url = `${BASE_URL}/${sportKey}/odds/?apiKey=${API_KEY}&regions=us&markets=h2h,spreads,totals`;
+    console.log('🌐 API URL:', url.replace(API_KEY, '[REDACTED]'));
+
     try {
-      const response = await fetch(
-        `${BASE_URL}/${sportKey}/odds/?apiKey=${API_KEY}&regions=us&markets=h2h,spreads,totals`
-      );
+      const response = await fetch(url);
+
+      console.log('📡 Response status:', response.status, response.statusText);
 
       if (!response.ok) {
-        throw new Error(`Error fetching games: ${response.statusText}`);
+        console.error('❌ API Error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('📄 Error response body:', errorText);
+        throw new Error(`Error fetching games: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('✅ Games data received:', data.length, 'games');
+      console.log('🎮 First game sample:', data[0]);
+      
       return data;
     } catch (error) {
-      console.error('Error fetching from Odds API:', error);
+      console.error('💥 Error fetching from Odds API:', error);
+      console.error('🔍 Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
       return [];
     }
   },

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useProfile } from '../../hooks/useProfile'
 import { picksService } from '../../lib/picksService'
 import { oddsClient } from '../../lib/oddsClient'
+import { mockGames } from '../../data/mockGames'
 import { AuthModal } from '../Auth/AuthModal'
 import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
@@ -38,6 +39,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const [pendingLockIn, setPendingLockIn] = useState(false)
   const [selectedPredictionType, setSelectedPredictionType] = useState<PredictionType>('MONEYLINE')
   const [predictionsCache, setPredictionsCache] = useState<Record<string, string>>({})
+  const [usingMockData, setUsingMockData] = useState(false)
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -53,20 +55,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   // Load games when sport changes
   useEffect(() => {
     const fetchGames = async () => {
+      console.log('🏈 Dashboard: Fetching games for sport:', selectedSport)
       const oddsGames = await oddsClient.getUpcomingGames(selectedSport)
-      const formattedGames: Game[] = oddsGames.map(g => ({
-        id: g.id,
-        homeTeam: g.home_team,
-        awayTeam: g.away_team,
-        time: oddsClient.formatGameTime(g.commence_time),
-        commenceTime: g.commence_time,
-        sport: selectedSport,
-        odds: oddsClient.getSpread(g),
-        spread: oddsClient.getSpread(g),
-        overUnder: oddsClient.getOverUnder(g),
-        confidence: 0, // Placeholder until AI analysis
-        aiPrediction: '' // Placeholder until AI analysis
-      }))
+      console.log('📋 Dashboard: Raw odds games received:', oddsGames.length)
+      
+      let formattedGames: Game[] = []
+      
+      if (oddsGames.length > 0) {
+        // Use API data
+        formattedGames = oddsGames.map(g => ({
+          id: g.id,
+          homeTeam: g.home_team,
+          awayTeam: g.away_team,
+          time: oddsClient.formatGameTime(g.commence_time),
+          commenceTime: g.commence_time,
+          sport: selectedSport,
+          odds: oddsClient.getSpread(g),
+          spread: oddsClient.getSpread(g),
+          overUnder: oddsClient.getOverUnder(g),
+          confidence: 0, // Placeholder until AI analysis
+          aiPrediction: '' // Placeholder until AI analysis
+        }))
+        setUsingMockData(false)
+      } else {
+        // Fallback to mock data for debugging
+        console.log('⚠️ Dashboard: No API data, using mock games for debugging')
+        formattedGames = mockGames.filter(game => game.sport === selectedSport)
+        setUsingMockData(true)
+      }
+      
+      console.log('🎲 Dashboard: Formatted games:', formattedGames.length)
+      console.log('🎮 Dashboard: First formatted game:', formattedGames[0])
       setGames(formattedGames)
     }
     fetchGames()
@@ -368,8 +387,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
 
       {/* Games List */}
       <div>
-        <h3 className="text-xl font-bold text-white mb-4">Upcoming {selectedSport} Games</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-bold text-white">Upcoming {selectedSport} Games</h3>
+            {usingMockData && (
+              <span className="px-2 py-1 bg-yellow-600 text-yellow-100 text-xs rounded-md">
+                Demo Mode
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-3 py-1 bg-slate-700 text-white text-xs rounded hover:bg-slate-600 transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
         <div className="space-y-3">
+          {console.log('🏟️ Rendering games list, games count:', games.length)}
+          {games.length === 0 ? (
+            <div className="text-center text-gray-400 py-8">
+              No upcoming games available. Check console for API issues.
+            </div>
+          ) : null}
           {games.map(game => {
             const hasSpread = Boolean(game.spread && !game.spread.toLowerCase().includes('n/a'))
             const hasOverUnder = Boolean(game.overUnder && !game.overUnder.toLowerCase().includes('n/a'))
