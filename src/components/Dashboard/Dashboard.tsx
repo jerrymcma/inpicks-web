@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext'
 import { useProfile } from '../../hooks/useProfile'
 import { picksService } from '../../lib/picksService'
 import { oddsClient } from '../../lib/oddsClient'
-import { mockGames } from '../../data/mockGames'
 import { AuthModal } from '../Auth/AuthModal'
 import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
@@ -59,31 +58,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       const oddsGames = await oddsClient.getUpcomingGames(selectedSport)
       console.log('📋 Dashboard: Raw odds games received:', oddsGames.length)
       
-      let formattedGames: Game[] = []
+      // Always use real API data only
+      const formattedGames: Game[] = oddsGames.map(g => ({
+        id: g.id,
+        homeTeam: g.home_team,
+        awayTeam: g.away_team,
+        time: oddsClient.formatGameTime(g.commence_time),
+        commenceTime: g.commence_time,
+        sport: selectedSport,
+        odds: oddsClient.getSpread(g),
+        spread: oddsClient.getSpread(g),
+        overUnder: oddsClient.getOverUnder(g),
+        confidence: 0, // Placeholder until AI analysis
+        aiPrediction: '' // Placeholder until AI analysis
+      }))
       
-      if (oddsGames.length > 0) {
-        // Use API data
-        formattedGames = oddsGames.map(g => ({
-          id: g.id,
-          homeTeam: g.home_team,
-          awayTeam: g.away_team,
-          time: oddsClient.formatGameTime(g.commence_time),
-          commenceTime: g.commence_time,
-          sport: selectedSport,
-          odds: oddsClient.getSpread(g),
-          spread: oddsClient.getSpread(g),
-          overUnder: oddsClient.getOverUnder(g),
-          confidence: 0, // Placeholder until AI analysis
-          aiPrediction: '' // Placeholder until AI analysis
-        }))
-        setUsingMockData(false)
-      } else {
-        // Fallback to mock data for debugging
-        console.log('⚠️ Dashboard: No API data, using mock games for debugging')
-        formattedGames = mockGames.filter(game => game.sport === selectedSport)
-        setUsingMockData(true)
-      }
-      
+      setUsingMockData(false)
       console.log('🎲 Dashboard: Formatted games:', formattedGames.length)
       console.log('🎮 Dashboard: First formatted game:', formattedGames[0])
       setGames(formattedGames)
@@ -406,7 +396,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
         <div className="space-y-3">
           {games.length === 0 ? (
             <div className="text-center text-gray-400 py-8">
-              No upcoming games available. Check console for API issues.
+              No upcoming {selectedSport} games scheduled at this time.
             </div>
           ) : (
             <>
