@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const nbaApiKey = Deno.env.get('NBA_API') ?? ''
-const nflApiKey = Deno.env.get('NFL_API') ?? ''
+const mlbApiKey = Deno.env.get('MLB_API') ?? ''
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
@@ -14,24 +14,28 @@ Deno.serve(async (req) => {
 
     // 1. Fetch live scores from SportRadar
     
-    // Fetch NFL scores (Weekly schedule which includes live scores)
-    if (nflApiKey) {
+    // Fetch MLB scores (Daily schedule which includes live scores)
+    if (mlbApiKey) {
       try {
-        // Using "current_week" endpoint if available, otherwise defaulting to manual logic or full schedule could be needed.
-        // Standard SportRadar NFL V7 endpoint for current week:
-        const nflResponse = await fetch(`https://api.sportradar.us/nfl/official/trial/v7/en/games/current_week/schedule.json?api_key=${nflApiKey}`)
+        const date = new Date()
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
         
-        if (nflResponse.ok) {
-          const nflData = await nflResponse.json()
-          // nflData.week.games is the array
-          const games = nflData.week?.games || []
-          liveGames.push(...transformData(games, 'NFL'))
-          console.log(`Fetched ${games.length} NFL games`)
+        // SportRadar MLB endpoint for daily schedule
+        const mlbResponse = await fetch(`https://api.sportradar.us/mlb/trial/v7/en/games/${year}/${month}/${day}/schedule.json?api_key=${mlbApiKey}`)
+        
+        if (mlbResponse.ok) {
+          const mlbData = await mlbResponse.json()
+          // mlbData.games is the array
+          const games = mlbData.games || []
+          liveGames.push(...transformData(games, 'MLB'))
+          console.log(`Fetched ${games.length} MLB games`)
         } else {
-          console.error('Failed to fetch NFL scores:', nflResponse.status, await nflResponse.text())
+          console.error('Failed to fetch MLB scores:', mlbResponse.status, await mlbResponse.text())
         }
       } catch (e) {
-        console.error('Error fetching NFL scores:', e)
+        console.error('Error fetching MLB scores:', e)
       }
     }
 
@@ -62,14 +66,14 @@ Deno.serve(async (req) => {
     // Mock data for demonstration (fallback if API calls are commented out)
     if (liveGames.length === 0) {
        liveGames.push({
-        id: 'nfl_chiefs_bills',
-        sport: 'NFL',
+        id: 'mlb_yankees_redsox',
+        sport: 'MLB',
         status: 'completed',
-        home_score: 27,
-        away_score: 24,
+        home_score: 5,
+        away_score: 3,
         winner: 'home',
-        home_team: 'Kansas City Chiefs',
-        away_team: 'Buffalo Bills'
+        home_team: 'New York Yankees',
+        away_team: 'Boston Red Sox'
       })
     }
 
@@ -194,22 +198,26 @@ function transformData(games: any[], sport: string) {
     if (game.status === 'closed' || game.status === 'complete' || game.status === 'completed') status = 'completed'
     else if (game.status === 'inprogress' || game.status === 'live') status = 'live'
 
+    // Get score based on sport (MLB uses 'runs', NBA/NFL use 'points')
+    const homeScore = sport === 'MLB' ? (game.home?.runs || game.home_runs || 0) : (game.home_points || game.home?.points || 0)
+    const awayScore = sport === 'MLB' ? (game.away?.runs || game.away_runs || 0) : (game.away_points || game.away?.points || 0)
+
     // Determine winner
     let winner: 'home' | 'away' | null = null
     if (status === 'completed') {
-       if (game.home_points > game.away_points) winner = 'home'
-       else if (game.away_points > game.home_points) winner = 'away'
+       if (homeScore > awayScore) winner = 'home'
+       else if (awayScore > homeScore) winner = 'away'
     }
 
     return {
       id: game.id, // SportRadar GUID
       sport: sport,
       status: status,
-      home_score: game.home_points || 0,
-      away_score: game.away_points || 0,
+      home_score: homeScore,
+      away_score: awayScore,
       winner: winner,
-      home_team: game.home?.name || game.home?.alias || 'Unknown Home',
-      away_team: game.away?.name || game.away?.alias || 'Unknown Away',
+      home_team: game.home?.name || game.home?.market || game.home?.alias || 'Unknown Home',
+      away_team: game.away?.name || game.away?.market || game.away?.alias || 'Unknown Away',
       start_time: game.scheduled // ISO string
     }
   })

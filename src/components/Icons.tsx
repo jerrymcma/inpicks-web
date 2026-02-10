@@ -11,3 +11,9 @@ export const BasketballIcon: React.FC<{ className?: string }> = ({ className = "
     🏀
   </span>
 )
+
+export const BaseballIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
+  <span className={className} role="img" aria-label="baseball" style={{ fontSize: '1.25rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+    ⚾
+  </span>
+)

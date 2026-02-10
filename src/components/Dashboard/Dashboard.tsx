@@ -7,7 +7,7 @@ import { scoresService } from '../../lib/scoresService'
 import { AuthModal } from '../Auth/AuthModal'
 import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
-import { FootballIcon, BasketballIcon } from '../Icons'
+import { BaseballIcon, BasketballIcon } from '../Icons'
 import type { Game, Sport, UserPick, PredictionType } from '../../types'
 
 interface DashboardProps {
@@ -18,7 +18,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const { user, signOut } = useAuth()
   const { profile, refetchProfile } = useProfile()
 
-  const [selectedSport, setSelectedSport] = useState<Sport>('NFL')
+  const [selectedSport, setSelectedSport] = useState<Sport>('MLB')
   const [games, setGames] = useState<Game[]>([])
   const [userPicks, setUserPicks] = useState<UserPick[]>([])
   
@@ -366,7 +366,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
 
       {/* Sport Selector */}
       <div className="flex gap-2">
-        {(['NFL', 'NBA'] as Sport[]).map(sport => (
+        {(['MLB', 'NBA'] as Sport[]).map(sport => (
           <button
             key={sport}
             onClick={() => setSelectedSport(sport)}
@@ -376,7 +376,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                 : 'btn-secondary hover:bg-slate-700'
             }`}
           >
-            {sport === 'NFL' && <FootballIcon />}
+            {sport === 'MLB' && <BaseballIcon />}
             {sport === 'NBA' && <BasketballIcon />}
             {sport}
           </button>
