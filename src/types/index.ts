@@ -1,6 +1,6 @@
 import { Database } from './database'
 
-export type Sport = 'NFL' | 'NBA' | 'MLB' | 'NHL' | 'NCAAF' | 'NCAAB'
+export type Sport = 'NFL' | 'NBA' | 'MLB' | 'NHL' | 'NCAAF' | 'NCAAMB'
 
 export interface Game {
   id: string

@@ -7,7 +7,7 @@ import { scoresService } from '../../lib/scoresService'
 import { AuthModal } from '../Auth/AuthModal'
 import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
-import { BaseballIcon, BasketballIcon } from '../Icons'
+import { BaseballIcon, BasketballIcon, HockeyIcon, CollegeBasketballIcon } from '../Icons'
 import type { Game, Sport, UserPick, PredictionType } from '../../types'
 
 interface DashboardProps {
@@ -365,12 +365,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       )}
 
       {/* Sport Selector */}
-      <div className="flex gap-2">
-        {(['MLB', 'NBA'] as Sport[]).map(sport => (
+      <div className="grid grid-cols-2 gap-2">
+        {(['MLB', 'NBA', 'NHL', 'NCAAMB'] as Sport[]).map(sport => (
           <button
             key={sport}
             onClick={() => setSelectedSport(sport)}
-            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+            className={`py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
               selectedSport === sport
                 ? 'btn-primary'
                 : 'btn-secondary hover:bg-slate-700'
@@ -378,6 +378,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           >
             {sport === 'MLB' && <BaseballIcon />}
             {sport === 'NBA' && <BasketballIcon />}
+            {sport === 'NHL' && <HockeyIcon />}
+            {sport === 'NCAAMB' && <CollegeBasketballIcon />}
             {sport}
           </button>
         ))}

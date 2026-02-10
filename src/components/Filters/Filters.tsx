@@ -1,13 +1,13 @@
 import React from 'react'
 import { Sport, FilterState } from '../../types'
-import { FootballIcon, BasketballIcon } from '../Icons'
+import { FootballIcon, BasketballIcon, BaseballIcon, HockeyIcon, CollegeBasketballIcon } from '../Icons'
 
 interface FiltersProps {
   filters: FilterState
   onFilterChange: (filters: FilterState) => void
 }
 
-const sports: Array<Sport | 'ALL'> = ['ALL', 'NFL', 'NBA', 'MLB', 'NHL', 'NCAAF', 'NCAAB']
+const sports: Array<Sport | 'ALL'> = ['ALL', 'NFL', 'NBA', 'MLB', 'NHL', 'NCAAF', 'NCAAMB']
 
 export const Filters: React.FC<FiltersProps> = ({ filters, onFilterChange }) => {
   return (
@@ -30,6 +30,10 @@ export const Filters: React.FC<FiltersProps> = ({ filters, onFilterChange }) => 
               >
                 {sport === 'NFL' && <FootballIcon />}
                 {sport === 'NBA' && <BasketballIcon />}
+                {sport === 'MLB' && <BaseballIcon />}
+                {sport === 'NHL' && <HockeyIcon />}
+                {sport === 'NCAAF' && <FootballIcon />}
+                {sport === 'NCAAMB' && <CollegeBasketballIcon />}
                 {sport}
               </button>
             ))}

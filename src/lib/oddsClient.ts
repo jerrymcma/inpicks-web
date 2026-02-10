@@ -46,6 +46,12 @@ export const oddsClient = {
       case 'NHL':
         sportKey = 'icehockey_nhl';
         break;
+      case 'NCAAMB':
+        sportKey = 'basketball_ncaab';
+        break;
+      case 'NCAAF':
+        sportKey = 'americanfootball_ncaaf';
+        break;
       default:
         sportKey = 'americanfootball_nfl';
     }
