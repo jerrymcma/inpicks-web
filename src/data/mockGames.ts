@@ -79,7 +79,7 @@ export const mockGames: Game[] = [
   },
   {
     id: 'ncaab-1',
-    sport: 'NCAAB',
+    sport: 'NCAAMB',
     homeTeam: 'Duke Blue Devils',
     awayTeam: 'North Carolina Tar Heels',
     time: '2026-01-25T00:00:00Z',
@@ -90,7 +90,7 @@ export const mockGames: Game[] = [
   },
   {
     id: 'ncaab-2',
-    sport: 'NCAAB',
+    sport: 'NCAAMB',
     homeTeam: 'Kansas Jayhawks',
     awayTeam: 'Kentucky Wildcats',
     time: '2026-01-25T01:30:00Z',
