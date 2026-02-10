@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useProfile } from '../../hooks/useProfile'
 import { picksService } from '../../lib/picksService'
 import { oddsClient } from '../../lib/oddsClient'
+import { scoresService } from '../../lib/scoresService'
 import { AuthModal } from '../Auth/AuthModal'
 import { PredictionModal } from '../Prediction/PredictionModal'
 import { SubscriptionModal } from '../Subscription/SubscriptionModal'
@@ -105,6 +106,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
 
     return () => {
       unsubscribe?.()
+    }
+  }, [user])
+
+  // Update game scores on component mount (if user is signed in)
+  useEffect(() => {
+    if (user) {
+      scoresService.updateGameScores()
     }
   }, [user])
 
@@ -387,7 +395,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
             )}
           </div>
           <button
-            onClick={() => window.location.reload()}
+            onClick={async () => {
+              await scoresService.updateGameScores()
+              if (user) {
+                const picks = await picksService.getUserPicks(user.id)
+                setUserPicks(picks)
+              }
+            }}
             className="px-3 py-1 bg-slate-700 text-white text-xs rounded hover:bg-slate-600 transition-colors"
           >
             Refresh
