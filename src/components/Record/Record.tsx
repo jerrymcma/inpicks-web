@@ -45,8 +45,9 @@ export const Record: React.FC = () => {
   }, [user])
 
   const getPickResult = (pick: UserPick) => {
-    if (pick.game_status !== 'completed') return 'pending'
-    return pick.is_correct ? 'win' : 'loss'
+    if (pick.game_status === 'completed') return pick.is_correct ? 'win' : 'loss'
+    if (pick.game_status === 'in_progress') return 'in_progress'
+    return 'pending'
   }
 
   const completedPicks = userPicks.filter(pick => pick.game_status === 'completed')
@@ -115,9 +116,10 @@ export const Record: React.FC = () => {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
                         result === 'win' ? 'bg-green-900/30 text-green-win' :
                         result === 'loss' ? 'bg-red-900/30 text-red-400' :
+                        result === 'in_progress' ? 'bg-yellow-900/30 text-yellow-300' :
                         'bg-slate-900/30 text-secondary'
                       }`}>
-                        {result === 'pending' ? 'Pending' : result === 'win' ? 'Win' : 'Loss'}
+                        {result === 'pending' ? 'Pending' : result === 'in_progress' ? 'In Progress' : result === 'win' ? 'Win' : 'Loss'}
                       </span>
                     </div>
                   </div>

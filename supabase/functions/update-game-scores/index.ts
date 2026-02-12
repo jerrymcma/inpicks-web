@@ -17,22 +17,24 @@ Deno.serve(async (req) => {
     // Fetch MLB scores (Daily schedule which includes live scores)
     if (mlbApiKey) {
       try {
-        const date = new Date()
-        const year = date.getFullYear()
-        const month = String(date.getMonth() + 1).padStart(2, '0')
-        const day = String(date.getDate()).padStart(2, '0')
-        
-        // SportRadar MLB endpoint for daily schedule
-        const mlbResponse = await fetch(`https://api.sportradar.us/mlb/trial/v7/en/games/${year}/${month}/${day}/schedule.json?api_key=${mlbApiKey}`)
-        
-        if (mlbResponse.ok) {
-          const mlbData = await mlbResponse.json()
-          // mlbData.games is the array
-          const games = mlbData.games || []
-          liveGames.push(...transformData(games, 'MLB'))
-          console.log(`Fetched ${games.length} MLB games`)
-        } else {
-          console.error('Failed to fetch MLB scores:', mlbResponse.status, await mlbResponse.text())
+        const dateOffsets = [0, -1]
+        for (const offset of dateOffsets) {
+          const date = new Date()
+          date.setDate(date.getDate() + offset)
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+
+          const mlbResponse = await fetch(`https://api.sportradar.us/mlb/trial/v7/en/games/${year}/${month}/${day}/schedule.json?api_key=${mlbApiKey}`)
+
+          if (mlbResponse.ok) {
+            const mlbData = await mlbResponse.json()
+            const games = mlbData.games || []
+            liveGames.push(...transformData(games, 'MLB'))
+            console.log(`Fetched ${games.length} MLB games for ${year}-${month}-${day}`)
+          } else {
+            console.error('Failed to fetch MLB scores:', mlbResponse.status, await mlbResponse.text())
+          }
         }
       } catch (e) {
         console.error('Error fetching MLB scores:', e)
@@ -42,21 +44,24 @@ Deno.serve(async (req) => {
     // Fetch NBA scores (Daily schedule)
     if (nbaApiKey) {
       try {
-        const date = new Date()
-        const year = date.getFullYear()
-        const month = String(date.getMonth() + 1).padStart(2, '0')
-        const day = String(date.getDate()).padStart(2, '0')
-        
-        const nbaResponse = await fetch(`https://api.sportradar.us/nba/trial/v8/en/games/${year}/${month}/${day}/schedule.json?api_key=${nbaApiKey}`)
-        
-        if (nbaResponse.ok) {
-          const nbaData = await nbaResponse.json()
-          // nbaData.games is the array
-          const games = nbaData.games || []
-          liveGames.push(...transformData(games, 'NBA'))
-          console.log(`Fetched ${games.length} NBA games`)
-        } else {
-           console.error('Failed to fetch NBA scores:', nbaResponse.status, await nbaResponse.text())
+        const dateOffsets = [0, -1]
+        for (const offset of dateOffsets) {
+          const date = new Date()
+          date.setDate(date.getDate() + offset)
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+
+          const nbaResponse = await fetch(`https://api.sportradar.us/nba/trial/v8/en/games/${year}/${month}/${day}/schedule.json?api_key=${nbaApiKey}`)
+
+          if (nbaResponse.ok) {
+            const nbaData = await nbaResponse.json()
+            const games = nbaData.games || []
+            liveGames.push(...transformData(games, 'NBA'))
+            console.log(`Fetched ${games.length} NBA games for ${year}-${month}-${day}`)
+          } else {
+            console.error('Failed to fetch NBA scores:', nbaResponse.status, await nbaResponse.text())
+          }
         }
       } catch (e) {
         console.error('Error fetching NBA scores:', e)
@@ -99,6 +104,8 @@ Deno.serve(async (req) => {
       // 3. Resolve User Picks if Game is Completed
       if (game.status === 'completed') {
         await resolvePicksForGame(game)
+      } else if (game.status === 'live') {
+        await updatePicksStatusForGame(game, 'in_progress')
       }
     }
 
@@ -121,29 +128,14 @@ async function resolvePicksForGame(game: any) {
     .from('user_picks')
     .select('*')
     .eq('sport', game.sport)
-    .eq('game_status', 'pending')
+    .or('game_status.eq.pending,game_status.eq.in_progress,game_status.is.null')
 
   if (error) {
     console.error('Error fetching picks:', error)
     return
   }
 
-  // Filter picks that match this game's teams (handle team name variations)
-  const matchingPicks = picks?.filter(pick => {
-    if (!pick.home_team || !pick.away_team) return false
-    
-    // Normalize team names for matching (remove common suffixes, case insensitive)
-    const normalizeTeam = (team: string) => 
-      team.toLowerCase().replace(/\s+(fc|sc|united|city|town)$/i, '').trim()
-    
-    const pickHome = normalizeTeam(pick.home_team)
-    const pickAway = normalizeTeam(pick.away_team)
-    const gameHome = normalizeTeam(game.home_team)
-    const gameAway = normalizeTeam(game.away_team)
-    
-    return (pickHome.includes(gameHome) || gameHome.includes(pickHome)) &&
-           (pickAway.includes(gameAway) || gameAway.includes(pickAway))
-  }) || []
+  const matchingPicks = getMatchingPicks(picks, game)
 
   console.log(`Found ${matchingPicks.length} picks to resolve for ${game.away_team} @ ${game.home_team}`)
 
@@ -189,6 +181,51 @@ async function resolvePicksForGame(game: any) {
       console.log(`Updated pick ${pick.id}: ${isCorrect ? 'CORRECT' : 'INCORRECT'}`)
     }
   }
+}
+
+async function updatePicksStatusForGame(game: any, status: 'in_progress') {
+  const { data: picks, error } = await supabase
+    .from('user_picks')
+    .select('*')
+    .eq('sport', game.sport)
+    .or('game_status.eq.pending,game_status.is.null')
+
+  if (error) {
+    console.error('Error fetching picks:', error)
+    return
+  }
+
+  const matchingPicks = getMatchingPicks(picks, game)
+
+  for (const pick of matchingPicks) {
+    const { error: updateError } = await supabase
+      .from('user_picks')
+      .update({ game_status: status })
+      .eq('id', pick.id)
+
+    if (updateError) {
+      console.error('Error updating pick status:', updateError)
+    }
+  }
+}
+
+function getMatchingPicks(picks: any[] | null, game: any) {
+  return (
+    picks?.filter(pick => {
+      if (!pick.home_team || !pick.away_team) return false
+
+      const normalizeTeam = (team: string) =>
+        team.toLowerCase().replace(/\s+(fc|sc|united|city|town)$/i, '').trim()
+
+      const pickHome = normalizeTeam(pick.home_team)
+      const pickAway = normalizeTeam(pick.away_team)
+      const gameHome = normalizeTeam(game.home_team)
+      const gameAway = normalizeTeam(game.away_team)
+
+      return (pickHome.includes(gameHome) || gameHome.includes(pickHome)) &&
+        (pickAway.includes(gameAway) || gameAway.includes(pickAway))
+    }) || []
+  )
 }
 
 // Helper to transform API data to our Game format
